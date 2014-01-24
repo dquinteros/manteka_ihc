@@ -4,23 +4,7 @@ require_once APPPATH.'controllers/Master.php';
 
 class Modulos extends MasterManteka {
 	
-	/**
-	 * Index Page for this controller.
-	 *
-	 * Maps to the following URL
-	 * 		http://example.com/index.php/welcome
-	 *	- or -  
-	 * 		http://example.com/index.php/welcome/index
-	 *	- or -
-	 * Since this controller is set as the default controller in 
-	 * config/routes.php, it's displayed at http://example.com/
-	 *
-	 * So any other public methods not prefixed with an underscore will
-	 * map to /index.php/welcome/<method_name>
-	 * @see http://codeigniter.com/user_guide/general/urls.html
-	 */
-	public function index() //Esto hace que el index sea la vista que se desee
-	{
+	public function index() {
 		//funcion por defecto
 		$this->verModulos();
 	}
@@ -33,13 +17,17 @@ class Modulos extends MasterManteka {
 	* que es la que carga la vista con el resto de los parametros de menu y barras laterales
 	*
 	*/
-	public function verModulos()
-	{  
-		$subMenuLateralAbierto = "verModulos"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;  $tipos_usuarios_permitidos[1] = TIPO_USR_PROFESOR;
-		$this->cargarTodo("Planificacion", 'cuerpo_modulos_ver', "barra_lateral_planificacion", "", $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);		
+	public function verModulos() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
+		}
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			$subMenuLateralAbierto = "verModulos"; //Para este ejemplo, los informes no tienen submenu lateral
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR, TIPO_USR_PROFESOR);
+			$this->cargarTodo("Planificacion", 'cuerpo_modulos_ver', "barra_lateral_planificacion", "", $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);		
+		}
 	}
     
 	/**
@@ -52,17 +40,27 @@ class Modulos extends MasterManteka {
 	* que es la que carga la vista con el resto de los parametros de menu y barras laterales. Como también los datos de la vista.
 	*
 	*/
-    public function agregarModulos()
-    {
-		$this->load->model("Model_modulo");
-		$datos_vista = array('nombre_modulos' => $this->Model_modulo->listaNombreModulos(),'profesoresL' => $this->Model_modulo->VerTodosLosProfesoresAddModulo(1),'profesores' => $this->Model_modulo->VerTodosLosProfesoresAddModulo(0),'sesiones' => $this->Model_modulo->listaSesionesParaAddModulo(),'mensaje_confirmacion'=>2,'requisitos' => $this->Model_modulo->listaRequisitosParaAddModulo());
- 		$subMenuLateralAbierto = "agregarModulos"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarTodo("Planificacion", 'cuerpo_modulos_agregar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+    public function agregarModulo() {
+    	if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
+		}
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			$this->load->model("Model_modulo_tematico");
+			$datos_vista = array();
 
+			$datos_vista['posiblesProfesoresLider'] = $this->Model_modulo_tematico->getAllProfesores();
+			$datos_vista['posiblesProfesoresEquipo'] = $this->Model_modulo_tematico->getAllProfesores();
+			$datos_vista['implementosModulo'] = $this->Model_modulo_tematico->getAllImplementos();
+
+	 		$subMenuLateralAbierto = "agregarModulo"; //Para este ejemplo, los informes no tienen submenu lateral
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarTodo("Planificacion", 'cuerpo_modulos_agregar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		}
     }
+
+
 	/**
 	* Recibe los datos de la vista para agregar un nuevo modulo
 	*
@@ -73,46 +71,41 @@ class Modulos extends MasterManteka {
 	* finalmente se carga toda la vista nuevamente como en agregarModulos
 	*
 	*/
-	    public function HacerAgregarModulo()
-    {
-		$this->load->model("Model_modulo");
+	public function postAgregarModulo() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
+		}
+		if ($this->input->server('REQUEST_METHOD') == 'POST') {
+			$this->load->model("Model_modulo_tematico");
 
-		
-		$nombre_modulo = $this->input->post('nombre_modulo');
-		$sesiones = $this->input->post('cod_sesion');
-		$descripcion_modulo = $this->input->post('descripcion_modulo');
-		$profesor_lider = $this->input->post('cod_profesor_lider');
-		$equipo_profesores = $this->input->post('cod_profesor_equipo');
-		$requisitos = $this->input->post('cod_requisito');
-		
-		$confirmacion = $this->Model_modulo->InsertarModulo($nombre_modulo,$sesiones,$descripcion_modulo,$profesor_lider,$equipo_profesores,$requisitos);
-		
-		/*$datos_vista = array('nombre_modulos' => $this->Model_modulo->listaNombreModulos(),'profesoresL' => $this->Model_modulo->VerTodosLosProfesoresAddModulo(1),'profesores' => $this->Model_modulo->VerTodosLosProfesoresAddModulo(0),'sesiones' => $this->Model_modulo->listaSesionesParaAddModulo(),'mensaje_confirmacion'=>2,'requisitos' => $this->Model_modulo->listaRequisitosParaAddModulo());
-      
-		$subMenuLateralAbierto = "agregarModulos"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarTodo("Planificacion", 'cuerpo_modulos_agregar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
-		*/
-				// mostramos el mensaje de operacion realizada
-		if ($confirmacion==1){
-			$datos_plantilla["titulo_msj"] = "Accion Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha ingresado el módulo con éxito";
-			$datos_plantilla["tipo_msj"] = "alert-success";
+			
+			$nombre = $this->input->post('nombre');
+			$descripcion = $this->input->post('descripcion');
+			$profesor_lider = $this->input->post('id_profesorLider');
+			$equipo_profesores = $this->input->post('id_profesoresEquipo');
+			$implementos = $this->input->post('id_implementos');
+			
+			$confirmacion = $this->Model_modulo_tematico->agregarModulo($nombre, $descripcion, $profesor_lider, $equipo_profesores, $implementos);
+
+			// mostramos el mensaje de operacion realizada
+			if ($confirmacion == TRUE) {
+				$datos_plantilla["titulo_msj"] = "Accion Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha ingresado el módulo con éxito";
+				$datos_plantilla["tipo_msj"] = "alert-success";
+			}
+			else {
+				$datos_plantilla["titulo_msj"] = "Accion No Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha ocurrido un error en el ingreso a la base de datos";
+				$datos_plantilla["tipo_msj"] = "alert-error";	
+			}
+			$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
+			$datos_plantilla["redirecTo"] = "Modulos/agregarModulo"; //Acá se pone el controlador/metodo hacia donde se redireccionará
+			$datos_plantilla["nombre_redirecTo"] = "Agregar módulo"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
 		}
-		else{
-			$datos_plantilla["titulo_msj"] = "Accion No Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha ocurrido un error en el ingreso a la base de datos";
-			$datos_plantilla["tipo_msj"] = "alert-error";	
-		}
-		$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
-		$datos_plantilla["redirecTo"] = "Modulos/agregarModulos"; //Acá se pone el controlador/metodo hacia donde se redireccionará
-		$datos_plantilla["nombre_redirecTo"] = "Agregar módulo"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
-    }
+	}
 	
 	
 	/**
@@ -122,17 +115,24 @@ class Modulos extends MasterManteka {
 	* recién se está cargando por primera vez. Luego se cargan los menus y barras lateras para cargar la vista.
 	*
 	*/
-    public function editarModulos()
-    {
-	
-		$this->load->model("Model_modulo");
-		$datos_vista = array('nombre_modulos' => $this->Model_modulo->listaNombreModulos(),'mensaje_confirmacion'=>2);
-		$subMenuLateralAbierto = "editarModulos"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarTodo("Planificacion", 'cuerpo_modulos_editar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+    public function editarModulo() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
+		}
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			$this->load->model("Model_modulo_tematico");
+			$datos_vista = array();
 
+			$datos_vista['posiblesProfesoresLider'] = $this->Model_modulo_tematico->getAllProfesoresWhitoutEquipo();
+			$datos_vista['posiblesProfesoresEquipo'] = $this->Model_modulo_tematico->getAllProfesoresWhitoutEquipo();
+			$datos_vista['implementosModulo'] = $this->Model_modulo_tematico->getAllImplementos();
+
+			$subMenuLateralAbierto = "editarModulo"; //Para este ejemplo, los informes no tienen submenu lateral
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarTodo("Planificacion", 'cuerpo_modulos_editar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		}
     }
 	/**
 	* Recibe los datos de la vista para editar el modulo
@@ -144,37 +144,41 @@ class Modulos extends MasterManteka {
 	* finalmente se carga toda la vista nuevamente como en editarModulos
 	*
 	*/
-	public function HacerEditarModulo()
-    {
-		$this->load->model("Model_modulo");
-
-		
-		$nombre_modulo = $this->input->post('nombre_modulo');
-		$sesiones = $this->input->post('sesion');
-		$descripcion_modulo = $this->input->post('descripcion_modulo');
-		$profesor_lider = $this->input->post('cod_profesor_lider');
-		$equipo_profesores = $this->input->post('profesores');
-		$requisitos = $this->input->post('requisitos');
-		$cod_equipo = $this->input->post('cod_equipo2');
-		$cod_mod = $this->input->post('cod_modulo');
-
-		$confirmacion = $this->Model_modulo->EditarModulo($nombre_modulo,$sesiones,$descripcion_modulo,$profesor_lider,$equipo_profesores,$requisitos,$cod_equipo,$cod_mod);
-		if ($confirmacion==1){
-			$datos_plantilla["titulo_msj"] = "Accion Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha editado el módulo con éxito";
-			$datos_plantilla["tipo_msj"] = "alert-success";
+	public function postEditarModulo() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		else{
-			$datos_plantilla["titulo_msj"] = "Accion No Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha ocurrido un error en el ingreso a la base de datos";
-			$datos_plantilla["tipo_msj"] = "alert-error";	
+		if ($this->input->server('REQUEST_METHOD') == 'POST') {
+			$this->load->model("Model_modulo_tematico");
+
+			
+			$nombre = $this->input->post('nombre');
+			$descripcion = $this->input->post('descripcion');
+			$profesor_lider = $this->input->post('id_profesorLider');
+			$equipo_profesores = $this->input->post('id_profesoresEquipo');
+			$implementos = $this->input->post('id_implementos');
+
+			$id_equipo = $this->input->post('id_equipo');
+			$id_modulo = $this->input->post('id_modulo');
+
+			$confirmacion = $this->Model_modulo_tematico->actualizarModulo($nombre, $descripcion, $profesor_lider, $equipo_profesores ,$implementos, $id_equipo,$id_modulo);
+			if ($confirmacion == TRUE) {
+				$datos_plantilla["titulo_msj"] = "Accion Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha editado el módulo con éxito";
+				$datos_plantilla["tipo_msj"] = "alert-success";
+			}
+			else {
+				$datos_plantilla["titulo_msj"] = "Accion No Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha ocurrido un error en el ingreso a la base de datos";
+				$datos_plantilla["tipo_msj"] = "alert-error";	
+			}
+			$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
+			$datos_plantilla["redirecTo"] = "Modulos/editarModulo"; //Acá se pone el controlador/metodo hacia donde se redireccionará
+			$datos_plantilla["nombre_redirecTo"] = "Editar módulo"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
 		}
-		$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
-		$datos_plantilla["redirecTo"] = "Modulos/editarModulos"; //Acá se pone el controlador/metodo hacia donde se redireccionará
-		$datos_plantilla["nombre_redirecTo"] = "Editar módulo"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
     }
 
 	/**
@@ -183,17 +187,19 @@ class Modulos extends MasterManteka {
 	* envía a la vista un mensaje que indica que se carga por primera vez, luego carga los menus y barras necesarias para su funcionamiento.
 	*
 	*/
-    public function borrarModulos()
-    {
-		
-		$datos_vista = array('mensaje_confirmacion'=>2);
-     
-		$subMenuLateralAbierto = "borrarModulos"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarTodo("Planificacion", 'cuerpo_modulos_borrar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);		
+    public function eliminarModulo() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
+		}
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			$datos_vista = array();
 
+			$subMenuLateralAbierto = "eliminarModulo"; //Para este ejemplo, los informes no tienen submenu lateral
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarTodo("Planificacion", 'cuerpo_modulos_eliminar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);		
+		}
     }
 	/**
 	* Recibe el código del modulo desde la vista para eliminarlo
@@ -205,105 +211,114 @@ class Modulos extends MasterManteka {
 	* finalmente se carga toda la vista nuevamente como en borrarModulos
 	*
 	*/
-	public function hacerBorrarModulos()
-    {
-		
-		$this->load->model("Model_modulo");
-		$cod_modulo_eliminar = $this->input->post('cod_modulo_eliminar');
-		$confirmacion = $this->Model_modulo->EliminarModulo($cod_modulo_eliminar);
-	
-		/*$datos_vista = array('mensaje_confirmacion'=>$confirmacion);
-     
-		$subMenuLateralAbierto = "borrarModulos"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarTodo("Planificacion", 'cuerpo_modulos_borrar', "barra_lateral_planificacion", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);		
-		*/
-
-		if ($confirmacion==1){
-			$datos_plantilla["titulo_msj"] = "Acción Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha eliminado el módulo con éxito";
-			$datos_plantilla["tipo_msj"] = "alert-success";
+	public function postEliminarModulo() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		else{
-			$datos_plantilla["titulo_msj"] = "Acción No Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha ocurrido un error en la eliminación con la base de datos";
-			$datos_plantilla["tipo_msj"] = "alert-error";	
-		}
-		$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
-		$datos_plantilla["redirecTo"] = "Modulos/borrarModulos"; //Acá se pone el controlador/metodo hacia donde se redireccionará
-		$datos_plantilla["nombre_redirecTo"] = "Borrar módulo"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
+		if ($this->input->server('REQUEST_METHOD') == 'POST') {
+			$this->load->model("Model_modulo_tematico");
+			$id_modulo_eliminar = $this->input->post('id_moduloEliminar');
+			$confirmacion = $this->Model_modulo_tematico->eliminarModulo($id_modulo_eliminar);
 
+			if ($confirmacion == TRUE) {
+				$datos_plantilla["titulo_msj"] = "Acción Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha eliminado el módulo con éxito";
+				$datos_plantilla["tipo_msj"] = "alert-success";
+			}
+			else {
+				$datos_plantilla["titulo_msj"] = "Acción No Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha ocurrido un error en la eliminación con la base de datos";
+				$datos_plantilla["tipo_msj"] = "alert-error";	
+			}
+			$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
+			$datos_plantilla["redirecTo"] = "Modulos/eliminarModulo"; //Acá se pone el controlador/metodo hacia donde se redireccionará
+			$datos_plantilla["nombre_redirecTo"] = "Eliminar módulo"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
+		}
     }
+
 
 	/**
 	*
 	* Método que responde a una solicitud de post enviando la información de todos los múdulos
 	*
 	*/
-	public function verModulosEditar(){
+	public function getAllModulosTematicosAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
 
-		$this->load->model('Model_modulo');
+		$this->load->model('Model_modulo_tematico');
 
-		$resultado = $this->Model_modulo->getAllModulos();
+		$resultado = $this->Model_modulo_tematico->getAllModulos();
 		echo json_encode($resultado);
 	} 
+
 
 	/**
 	*
 	* Método que responde a una solicitud de post enviando la información de todos las sesiones 
 	*
 	*/
-	public function obtenerSesionesEditar() {
+	public function getAllSesionesAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
 
-		$this->load->model('Model_modulo');
+		$this->load->model('Model_modulo_tematico');
 
-		$resultado = $this->Model_modulo->listaSesionesParaEditarModulo();
+		$resultado = $this->Model_modulo_tematico->getAllSesiones();
 		echo json_encode($resultado);
 	}
-	
+
+
 	/**
 	*
 	* Método que responde a una solicitud de post enviando la información de todas las sesiones que corresponden a un cierto módulo
 	*
 	*/
-	public function obtenerSesionesVer() {
+	public function getSesionesByModuloTematicoAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
 
-		$this->load->model('Model_modulo');
-		$cod_mod = $this->input->post('cod_mod_post');
-		$resultado = $this->Model_modulo->listaSesionesParaVerModulo($cod_mod);
+		$this->load->model('Model_modulo_tematico');
+		$id_mod = $this->input->post('id_mod_post');
+		$resultado = $this->Model_modulo_tematico->getSesionesByModuloTematico($id_mod);
 		echo json_encode($resultado);
 	}
-	
+
+
 	/**
 	*
 	* Método que responde a una solicitud de post enviando la información de todos los profesores que no tienen equipo o que pertenecen a un equipo en particular (cod_equipo)
 	*
 	*/
 	public function obtenerProfes() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;$this->db->where('name', $name); 
 		}
 		$cod_equipo = $this->input->post('cod_equipo_post');
-		$this->load->model('Model_modulo');
-		$resultado = $this->Model_modulo->profesEditarModulo($cod_equipo);
+		$this->load->model('Model_modulo_tematico');
+		$resultado = $this->Model_modulo_tematico->profesEditarModulo($cod_equipo);
 		echo json_encode($resultado);
 	}
 	
@@ -312,55 +327,49 @@ class Modulos extends MasterManteka {
 	* Método que responde a una solicitud de post enviando la información de todos los profesores que pertenecen a un equipo en particular
 	*
 	*/
-	public function obtenerProfesVer() {
+	public function getProfesoresByModuloTematicoAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
-		$cod_equipo = $this->input->post('cod_equipo_post');
-		$this->load->model('Model_modulo');
-		$resultado = $this->Model_modulo->listaProfesoresVerModulo($cod_equipo);
+		$id_mod = $this->input->post('id_mod_post');
+		$this->load->model('Model_modulo_tematico');
+		$resultado = $this->Model_modulo_tematico->getProfesoresByModuloTematico($id_mod);
 		echo json_encode($resultado);
 	}
-	
-	/**
-	*
-	* Método que responde a una solicitud de post enviando la información de todos los requisitos e diferenciando si estos están asociados a un módulo en particular
-	*
-	*/
-	public function obtenerRequisitos() {
-		if (!$this->isLogged()) {
-			//echo 'No estás logueado!!';
-			return;
-		}
-		$this->load->model('Model_modulo');
-		$cod_mod = $this->input->post('cod_mod_post');
-	
-		$resultado = $this->Model_modulo->listaRequisitosParaEditarModulo($cod_mod);
-		echo json_encode($resultado);
-	}
+
 	/**
 	*
 	* Método que responde a una solicitud de post enviando la información de todos los requisitos asociados a un módulo en particular
 	*
 	*/
-	public function obtenerRequisitosVer() {
+	public function getImplementosByModuloTematicoAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
-		$this->load->model('Model_modulo');
-		$cod_mod = $this->input->post('cod_mod_post');
+		$this->load->model('Model_modulo_tematico');
+		$id_mod = $this->input->post('id_mod_post');
 	
-		$resultado = $this->Model_modulo->listaRequisitosVerModulo($cod_mod);
+		$resultado = $this->Model_modulo_tematico->getImplementosByModulo($id_mod);
 		echo json_encode($resultado);
 	}
-	
+
+
 	/**
 	* Se buscan módulos de forma asincrona para mostrarlos en la vista
 	*
 	**/
-	public function postBusquedaModulos() {
+	public function getModulosTematicosAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
@@ -368,18 +377,18 @@ class Modulos extends MasterManteka {
 		$textoFiltro = $this->input->post('textoFiltroBasico');
 		$textoFiltrosAvanzados = $this->input->post('textoFiltrosAvanzados');
 		
-		$this->load->model('Model_modulo');
-		$resultado = $this->Model_modulo->getModulosByFilter($textoFiltro, $textoFiltrosAvanzados);
+		$this->load->model('Model_modulo_tematico');
+		$resultado = $this->Model_modulo_tematico->getModulosByFilter($textoFiltro, $textoFiltrosAvanzados);
 		
 		/* ACÁ SE ALMACENA LA BÚSQUEDA REALIZADA POR EL USUARIO */
 		if (count($resultado) > 0) {
-			$this->load->model('model_busquedas');
+			$this->load->model('Model_busqueda');
 			//Se debe insertar sólo si se encontraron resultados
-			$this->model_busquedas->insertarNuevaBusqueda($textoFiltro, 'modulos', $this->session->userdata('rut'));
+			$this->Model_busqueda->insertarNuevaBusqueda($textoFiltro, 'modulos', $this->session->userdata('rut'));
 			
 			$cantidad = count($textoFiltrosAvanzados);
 			for ($i = 0; $i < $cantidad; $i++) {
-				$this->model_busquedas->insertarNuevaBusqueda($textoFiltrosAvanzados[$i], 'modulos', $this->session->userdata('rut'));
+				$this->Model_busqueda->insertarNuevaBusqueda($textoFiltrosAvanzados[$i], 'modulos', $this->session->userdata('rut'));
 			}
 			
 		}
@@ -390,16 +399,17 @@ class Modulos extends MasterManteka {
 	* Método que responde a una solicitud de post para pedir los datos de un módulo temático
 	* Recibe como parámetro el código del módulo temático
 	*/
-	public function postDetallesModulo() {
-		//Se comprueba que quien hace esta petición de ajax esté logueado
+	public function getDetallesModuloTematicoAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
-
 		$cod = $this->input->post('cod_modulo');
-		$this->load->model('Model_modulo');
-		$resultado = $this->Model_modulo->getDetallesModulo($cod);
+		$this->load->model('Model_modulo_tematico');
+		$resultado = $this->Model_modulo_tematico->getDetallesModulo($cod);
 		echo json_encode($resultado);
 	}
 

@@ -1,17 +1,56 @@
 <?php
 
 class Model_profesor extends CI_Model {
-   public $rut_profesor = 0;
-    var $nombre_profesor = '';
-    var $nombre2_profesor ='';
-    var $apellido_paterno ='';
-    var $apellido_materno='';
-    var $correo_prof1='';
-    var $correo_prof2='';
-    var $telefono='';
-    var $tipo=''; // se refiere a si es profesor normal o coordinador
 
-	
+	/**
+	* Obtiene una lista con todos los profesores y su informacion de usuario.
+	*
+	* Obtiene una listac con todos los profesores uniendo su informacion con la presente en la tabla usuarios.
+	*
+	* @param none
+	* @return array datos de los profesores
+	*/
+	function getAllProfesores() {
+		$this->db->select('profesor.RUT_USUARIO AS id');
+		$this->db->select('profesor.RUT_USUARIO AS rut');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('NOMBRE1 AS nombre2');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('APELLIDO2 AS apellido2');
+		$this->db->select('TELEFONO AS fono');
+		$this->db->select('CORREO1_USER AS email1');
+		$this->db->select('CORREO2_USER AS email2');
+		$this->db->join('usuario', 'profesor.RUT_USUARIO = usuario.RUT_USUARIO');
+		$query = $this->db->get('profesor');
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
+	function getProfesoresByModuloTematico($id_moduloTematico) {
+		$this->db->select('profesor.RUT_USUARIO AS id');
+		$this->db->select('profesor.RUT_USUARIO AS rut');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('NOMBRE1 AS nombre2');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('APELLIDO2 AS apellido2');
+		$this->db->select('TELEFONO AS fono');
+		$this->db->select('CORREO1_USER AS email1');
+		$this->db->select('CORREO2_USER AS email2');
+		$this->db->join('usuario', 'profesor.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->join('profe_equi_lider', 'profesor.RUT_USUARIO = profe_equi_lider.RUT_USUARIO');
+		$this->db->join('equipo_profesor', 'profe_equi_lider.ID_EQUIPO = equipo_profesor.ID_EQUIPO');
+		$this->db->where('ID_MODULO_TEM', $id_moduloTematico);
+		$query = $this->db->get('profesor');
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
 	/**
 	* Inserta un profesor en la base de datos
 	*
@@ -28,112 +67,73 @@ class Model_profesor extends CI_Model {
 	* @param string $correo_profesor1 Correo Alternativo del profesor a insertar
 	* @param string $telefono_profesor Telefono del profesor a insertar
 	* @param string $tipo_profesor Tipo del profesor a insertar
-	* @return int 1 o -1 en caso de éxito o fracaso en la operación
+	* @return boolean TRUE o FALSE en caso de éxito o fracaso en la operación
 	*/
-	public function InsertarProfesor($rut_profesor,$nombre1_profesor,$nombre2_profesor,$apellido1_profesor,$apellido2_profesor,$correo_profesor,$correo_profesor1,$telefono_profesor, $tipo_profesor) 
-  {
-  	$id_tipo = TIPO_USR_PROFESOR;
-    $pass = $rut_profesor;
-    $data2 = array(         
-          'RUT_USUARIO' => $rut_profesor,
-          'ID_TIPO' => $id_tipo,
-          'PASSWORD_PRIMARIA' => md5($pass),
-          'CORREO1_USER' => $correo_profesor,
-		  'CORREO2_USER' => $correo_profesor1,
-    );
-    
-    $datos2 = $this->db->insert('usuario',$data2);
-    
-    $data = array(          
-          'RUT_USUARIO2' => $rut_profesor ,
-          'NOMBRE1_PROFESOR' => $nombre1_profesor ,
-          'NOMBRE2_PROFESOR' => $nombre2_profesor ,
-          'APELLIDO1_PROFESOR' => $apellido1_profesor ,
-          'APELLIDO2_PROFESOR' => $apellido2_profesor,
-          'TELEFONO_PROFESOR' =>  $telefono_profesor,
-          'TIPO_PROFESOR' => $tipo_profesor, 
-    );
+	public function agregarProfesor($rut, $nombre1, $nombre2, $apellido1, $apellido2, $correo1, $correo2, $telefono, $tipo_profesor) {
+		
+		$pass = $rut;
+		$data1 = array(
+			'RUT_USUARIO' => $rut,
+			'ID_TIPO' => TIPO_USR_PROFESOR,
+			'PASSWORD_PRIMARIA' => md5($pass),
+			'CORREO1_USER' => $correo1,
+			'CORREO2_USER' => $correo2,
+			'NOMBRE1' => $nombre1,
+			'NOMBRE2' => $nombre2,
+			'APELLIDO1' => $apellido1,
+			'APELLIDO2' => $apellido2,
+			'TELEFONO' =>  $telefono,
+			'LOGUEABLE' => TRUE
+		);
+		$data2 = array(
+			'RUT_USUARIO' => $rut,
+			'ID_TIPO_PROFESOR' => $tipo_profesor
+		);
 
-    $datos = $this->db->insert('profesor',$data);
+		$data3 = array(
+			'PRO_RUT_USUARIO' => $rut
+		);
 
-    if($datos && $datos2){
-      return 1;
-    }
-    else{
-      return -1;
-    }
-    
-    }
+		$this->db->trans_start();
+		$datos2 = $this->db->insert('usuario', $data1);
 
+		$datos = $this->db->insert('profesor', $data2);
+		$datos = $this->db->insert('ayu_profe', $data3); //Lo agrego sin ayudante por defecto
+		$this->db->trans_complete();
 
-   
-
-	
-	/**
-	* Obtiene los datos de todos los profesores de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo la información de cada profesor y se va guardando en un arreglo de dos dimensiones
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return array $lista Contiene la información de todos los profesores del sistema
-	*/
-	public function VerTodosLosProfesores()
-	{
-		//$sql="SELECT * FROM profesor ORDER BY APELLIDO1_PROFESOR"; //código MySQL
-		$this->db->select('*');
-		$this->db->from('profesor');
-		$this->db->order_by("APELLIDO1_PROFESOR", "asc");
-		$query=$this->db->get();
-		$datos=$query->result();
-		//$datos=mysql_query($sql); //enviar código MySQL
-		//echo mysql_error();
-		$contador = 0;
-		$lista=array();
-		//while ($row = mysql_fetch_array($datos)) { //Bucle para ver todos los registros
-		foreach ($datos as $row) {
-		   $lista[$contador]=array();
-           $lista[$contador][0] = $row->RUT_USUARIO2;
-           $lista[$contador][1] = $row->NOMBRE1_PROFESOR;
-           $lista[$contador][2] = $row->NOMBRE2_PROFESOR;
-           $lista[$contador][3] = $row->APELLIDO1_PROFESOR;
-           $lista[$contador][4] = $row->APELLIDO2_PROFESOR;
-           $lista[$contador][5] = $row->TELEFONO_PROFESOR;
-            $lista[$contador][6]= $row->TIPO_PROFESOR;
-			$contador = $contador + 1;
+		if ($this->db->trans_status() === FALSE) {
+			return FALSE;
 		}
-		return $lista;
+		else{
+			return TRUE;
 		}
+	}
 
 
-
-
-	/**
-	* Obtiene los datos de todos los profesores de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo la información de cada profesor y se va guardando en un arreglo de dos dimensiones
-	* Se hace el cruce también con la tabla usuario, verificando que los ruts sean iguales
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return  Información de todos los profesores del sistema.
-	*/
-		public function getAllProfesores()
-	{
-		$this->db->select('RUT_USUARIO2 AS rut');
-		$this->db->select('NOMBRE1_PROFESOR AS nombre1');
-		$this->db->select('NOMBRE2_PROFESOR AS nombre2');
-		$this->db->select('APELLIDO1_PROFESOR AS apellido1');
-		$this->db->select('APELLIDO2_PROFESOR AS apellido2');
-		$this->db->select('CORREO1_USER AS correo');
-		$this->db->from('profesor');
-		$this->db->join('usuario','profesor.RUT_USUARIO2 = usuario.RUT_USUARIO');
-		$this->db->order_by("NOMBRE1_PROFESOR", "asc");
-		$query = $this->db->get();
+	public function rutExiste($rut) {
+		$this->db->select('COUNT(RUT_USUARIO) AS resultado');
+		$query = $this->db->where('RUT_USUARIO', $rut);
+		$query = $this->db->get('usuario');
 		if ($query == FALSE) {
-			$query = array();
-			return $query;
+			return FALSE;
+		}
+		if ($query->row()->resultado > 0) {
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+
+    public function getTiposProfesores() {
+    	$this->db->select('ID_TIPO_PROFESOR AS id');
+		$this->db->select('TIPO_PROFESOR AS nombre_tipo');
+		$query = $this->db->get('tipo_profesor');
+		if ($query == FALSE) {
+			return array();
 		}
 		return $query->result();
-	}
+    }
+
 
 	/**
 	* Edita la información de un profesor en la base de datos
@@ -150,90 +150,39 @@ class Model_profesor extends CI_Model {
 	* @param string $ape2 Apellido mateno del profesor
 	* @return int 1 o -1 en caso de éxito o fracaso en la operación
 	*/
-    public function EditarProfesor($run_profe,$telefono_profe,$tipo_profe,$nom1, $nom2, $ape1,$ape2,$correo1,$correo2)
+    public function actualizarProfesor($rut, $nombre1, $nombre2, $apellido1, $apellido2, $correo1, $correo2, $telefono, $tipo_profe, $resetPass)
     {
-		$data = array(					
-					'RUT_USUARIO2' => $run_profe ,
-					'NOMBRE1_PROFESOR' => $nom1 ,
-					'NOMBRE2_PROFESOR' => $nom2,
-					'APELLIDO1_PROFESOR' => $ape1 ,
-					'APELLIDO2_PROFESOR' => $ape2,
-					'TELEFONO_PROFESOR'=>$telefono_profe,
-					'TIPO_PROFESOR' => $tipo_profe,
+    	$datos1 = array(
+				'NOMBRE1' => $nombre1,
+				'NOMBRE2' => $nombre2,
+				'APELLIDO1' => $apellido1,
+				'APELLIDO2' => $apellido2,
+				'TELEFONO' => $telefono,
+				'CORREO1_USER' => $correo1,
+				'CORREO2_USER' => $correo2);
+		if($resetPass){
+			$datos1['PASSWORD_PRIMARIA'] = md5($rut);
+		}
 
-		);
-		$this->db->where('RUT_USUARIO2', $run_profe);
-        $datos = $this->db->update('profesor',$data);
-		
-	    $this->db->where('RUT_USUARIO',$run_profe);
-        $informacion_user = array(
-                        'CORREO1_USER' => $correo1,
-                        'CORREO2_USER' => $correo2,);
-        $datos2 = $this->db->update('usuario',$informacion_user);
-		
-		if($datos == true && $datos2==true){
-			return 1;
+		$this->db->trans_start();
+
+		$this->db->where('ID_TIPO', TIPO_USR_PROFESOR);
+		$this->db->where('RUT_USUARIO', $rut);
+		$res = $this->db->update('usuario', $datos1);
+
+		$this->db->where('RUT_USUARIO',$rut);
+		$res = $this->db->update('profesor', array('ID_TIPO_PROFESOR' => $tipo_profe));
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			return FALSE;
 		}
 		else{
-			return -1;
-		}	
-    }
-
-	/**
-	* Obtiene los datos de todos los modulos de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo la información de cada modulo y se va guardando en un arreglo de dos dimensiones
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return array $lista Contiene la información de todos los modulos del sistema
-	*/
-   public function verModulo()
-  {
-    //$sql="SELECT * FROM MODULO_TEMATICO"; //código MySQL
-    $this->db->select('*');
-    $this->db->from('MODULO_TEMATICO');
-    $query=$this->db->get();
-    $datos=$query->result();
-    //$datos=mysql_query($sql); //enviar código MySQL
-    $contador = 0;
-    $lista=array();
-    //while ($row=mysql_fetch_array($datos)) { //Bucle para ver todos los registros
-    foreach ($datos as $row) {
-    	$lista[$contador]=array();
-      	$lista[$contador][0] = $row->COD_MODULO_TEM;
-      	$lista[$contador][3] = $row->NOMBRE_MODULO;
-      	$contador = $contador + 1;
-    }
-    
-    return $lista;
-  }
-
-	/**
-	* Obtiene los datos de todas las secciones de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo el código de cada sección y se va guardando en un arreglo
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return array $lista Contiene la información de todas las secciones del sistema
-	*/
-	public function verSeccion(){
-		//$sql="SELECT cod_seccion FROM SECCION"; //código MySQL
-		$this->db->select('COD_SECCION');
-		$this->db->from('seccion');
-		$query=$this->db->get();
-		$datos=$query->result();
-		//$datos=mysql_query($sql); //enviar código MySQL
-		$contador = 0;
-		$lista=array();
-		//while ($row=mysql_fetch_array($datos)) { //Bucle para ver todos los registros
-		foreach ($datos as $row) {
-			$lista=array();
-			$lista[$contador] = $row->COD_SECCION;
-			$contador = $contador + 1;
+			return TRUE;
 		}
-		
-		return $lista;
-	}
+    }
+
 
 	/**
 	*Obtiene todos los datos de un profesor en específico desde la base de datos
@@ -244,21 +193,29 @@ class Model_profesor extends CI_Model {
 	*@return se retorna la fila que contiene la información correspondiente al profesor buscato.
 	*/
 	public function getDetallesProfesor($rut) {
-		$this->db->select('profesor.RUT_USUARIO2 AS rut');
-		$this->db->select('NOMBRE1_PROFESOR AS nombre1');
-		$this->db->select('NOMBRE2_PROFESOR AS nombre2');
-		$this->db->select('APELLIDO1_PROFESOR AS apellido1');
-		$this->db->select('APELLIDO2_PROFESOR AS apellido2');
-		$this->db->select('TELEFONO_PROFESOR AS telefono');
-		$this->db->select('TIPO_PROFESOR AS tipo');
-		$this->db->select('CORREO1_USER AS correo');
+		$this->db->select('usuario.RUT_USUARIO AS rut');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('NOMBRE2 AS nombre2');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('APELLIDO2 AS apellido2');
+		$this->db->select('TELEFONO AS telefono');
+		$this->db->select('profesor.ID_TIPO_PROFESOR AS id_tipo_profesor');
+		$this->db->select('TIPO_PROFESOR AS tipo_profesor');
+		$this->db->select('CORREO1_USER AS correo1');
 		$this->db->select('CORREO2_USER AS correo2');
-		$this->db->select('NOMBRE_MODULO AS moduloTem');
-		$this->db->join('usuario', 'profesor.RUT_USUARIO2 = usuario.RUT_USUARIO');
-		$this->db->join('profe_seccion', 'profesor.RUT_USUARIO2 = profe_seccion.RUT_USUARIO2', 'LEFT OUTER');
-		$this->db->join('seccion_mod_tem', 'profe_seccion.COD_SECCION = seccion_mod_tem.COD_SECCION', 'LEFT OUTER');
-		$this->db->join('modulo_tematico', 'seccion_mod_tem.COD_MODULO_TEM = modulo_tematico.COD_MODULO_TEM', 'LEFT OUTER');
-		$this->db->where('profesor.RUT_USUARIO2', $rut);
+		$this->db->select('GROUP_CONCAT( DISTINCT NOMBRE_MODULO) AS moduloTematico');
+		$this->db->select('GROUP_CONCAT( CONCAT_WS(\'-\', LETRA_SECCION, NUMERO_SECCION )) AS seccion', FALSE);
+		$this->db->join('usuario', 'profesor.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->join('tipo_profesor', 'profesor.ID_TIPO_PROFESOR = tipo_profesor.ID_TIPO_PROFESOR');
+		$this->db->join('profe_equi_lider', 'profesor.RUT_USUARIO = profe_equi_lider.RUT_USUARIO', 'LEFT OUTER');
+		$this->db->join('equipo_profesor', 'profe_equi_lider.ID_EQUIPO = equipo_profesor.ID_EQUIPO', 'LEFT OUTER');
+		$this->db->join('modulo_tematico', 'equipo_profesor.ID_MODULO_TEM = modulo_tematico.ID_MODULO_TEM', 'LEFT OUTER');
+		$this->db->join('ayu_profe', 'profesor.RUT_USUARIO = ayu_profe.PRO_RUT_USUARIO', 'LEFT OUTER');
+		$this->db->join('planificacion_clase', 'ayu_profe.ID_AYU_PROFE = planificacion_clase.ID_AYU_PROFE', 'LEFT OUTER');
+		$this->db->join('seccion', 'planificacion_clase.ID_SECCION = seccion.ID_SECCION', 'LEFT OUTER');
+		$this->db->where('profesor.RUT_USUARIO', $rut);
+		//$this->db->where('seccion.ID_SESION', 'planificacion_clase.ID_SESION', FALSE);
+		$this->db->group_by('profesor.RUT_USUARIO');
 		$query = $this->db->get('profesor');
 		if ($query == FALSE) {
 			return array();
@@ -266,24 +223,30 @@ class Model_profesor extends CI_Model {
 		return $query->row();
 	}
 
-	public function getProfesoresByFilter($texto, $textoFiltrosAvanzados)
-	{
-		$this->db->select('profesor.RUT_USUARIO2 AS id');
-		$this->db->select('NOMBRE1_PROFESOR AS nombre1');
-		$this->db->select('APELLIDO1_PROFESOR AS apellido1');
-		$this->db->select('NOMBRE_MODULO AS moduloTem');
-		$this->db->join('profe_seccion', 'profesor.RUT_USUARIO2 = profe_seccion.RUT_USUARIO2', 'LEFT OUTER');
-		$this->db->join('seccion_mod_tem', 'profe_seccion.COD_SECCION = seccion_mod_tem.COD_SECCION', 'LEFT OUTER');
-		$this->db->join('modulo_tematico', 'seccion_mod_tem.COD_MODULO_TEM = modulo_tematico.COD_MODULO_TEM', 'LEFT OUTER');
+	public function getProfesoresByFilter($texto, $textoFiltrosAvanzados) {
+		$this->db->select('profesor.RUT_USUARIO AS id');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('GROUP_CONCAT( DISTINCT NOMBRE_MODULO ) AS moduloTematico');
+		$this->db->select('GROUP_CONCAT( DISTINCT CONCAT_WS(\'-\', LETRA_SECCION, NUMERO_SECCION )) AS seccion', FALSE);
+		$this->db->join('usuario', 'profesor.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->join('tipo_profesor', 'profesor.ID_TIPO_PROFESOR = tipo_profesor.ID_TIPO_PROFESOR');
+		$this->db->join('profe_equi_lider', 'profesor.RUT_USUARIO = profe_equi_lider.RUT_USUARIO', 'LEFT OUTER');
+		$this->db->join('equipo_profesor', 'profe_equi_lider.ID_EQUIPO = equipo_profesor.ID_EQUIPO', 'LEFT OUTER');
+		$this->db->join('modulo_tematico', 'equipo_profesor.ID_MODULO_TEM = modulo_tematico.ID_MODULO_TEM', 'LEFT OUTER');
+		$this->db->join('ayu_profe', 'profesor.RUT_USUARIO = ayu_profe.PRO_RUT_USUARIO', 'LEFT OUTER');
+		$this->db->join('planificacion_clase', 'ayu_profe.ID_AYU_PROFE = planificacion_clase.ID_AYU_PROFE', 'LEFT OUTER');
+		$this->db->join('seccion', 'planificacion_clase.ID_SECCION = seccion.ID_SECCION', 'LEFT OUTER');
 
-		$this->db->order_by('APELLIDO1_PROFESOR', 'asc');
+		$this->db->group_by('profesor.RUT_USUARIO');
+		$this->db->order_by('APELLIDO1', 'asc');
 
 		if ($texto != "") {
-			$this->db->like("profesor.RUT_USUARIO2", $texto);
-			$this->db->or_like("NOMBRE1_PROFESOR", $texto);
-			$this->db->or_like("NOMBRE2_PROFESOR", $texto);
-			$this->db->or_like("APELLIDO1_PROFESOR", $texto);
-			$this->db->or_like("APELLIDO2_PROFESOR", $texto);
+			$this->db->like("profesor.RUT_USUARIO", $texto);
+			$this->db->or_like("NOMBRE1", $texto);
+			$this->db->or_like("NOMBRE2", $texto);
+			$this->db->or_like("APELLIDO1", $texto);
+			$this->db->or_like("APELLIDO2", $texto);
 			$this->db->or_like("NOMBRE_MODULO", $texto);
 		}
 
@@ -294,22 +257,26 @@ class Model_profesor extends CI_Model {
 			define("BUSCAR_POR_NOMBRE", 1);
 			define("BUSCAR_POR_APELLIDO", 2);
 			define("BUSCAR_POR_MOD_TEM", 3);
+			define("BUSCAR_POR_SECCION", 4);
 			
 			if($textoFiltrosAvanzados[BUSCAR_POR_RUT] != ''){
-				$this->db->like("profesor.RUT_USUARIO2", $textoFiltrosAvanzados[BUSCAR_POR_RUT]);
+				$this->db->like("profesor.RUT_USUARIO", $textoFiltrosAvanzados[BUSCAR_POR_RUT]);
 			}
 			if ($textoFiltrosAvanzados[BUSCAR_POR_NOMBRE] != '') {
-				$this->db->where("(NOMBRE1_PROFESOR LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%' OR NOMBRE2_PROFESOR LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%')");
+				$this->db->where("(NOMBRE1 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%' OR NOMBRE2 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%')");
 				//$this->db->like("(NOMBRE1_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]);
 				//$this->db->or_like("NOMBRE2_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]);
 			}
 			if ($textoFiltrosAvanzados[BUSCAR_POR_APELLIDO] != '') {
-				$this->db->where("(APELLIDO1_PROFESOR LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%' OR APELLIDO2_PROFESOR LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%')");
+				$this->db->where("(APELLIDO1 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%' OR APELLIDO2 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%')");
 				//$this->db->like("(APELLIDO1_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]);
 				//$this->db->or_like("APELLIDO2_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]);
 			}
-			if($textoFiltrosAvanzados[BUSCAR_POR_MOD_TEM] != ''){
+			if($textoFiltrosAvanzados[BUSCAR_POR_MOD_TEM] != '') {
 				$this->db->like("NOMBRE_MODULO", $textoFiltrosAvanzados[BUSCAR_POR_MOD_TEM]);
+			}
+			if($textoFiltrosAvanzados[BUSCAR_POR_SECCION] != '') {
+				$this->db->where("(LETRA_SECCION LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%' OR NUMERO_SECCION LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%')");
 			}
 		}
 		$query = $this->db->get('profesor');
@@ -330,25 +297,64 @@ class Model_profesor extends CI_Model {
 	* @param string $rut_profesor Rut del profesor que se eliminará de la base de datos
 	* @return int 1 o -1 en caso de éxito o fracaso en la operación
 	*/
-	public function EliminarProfesor($rut_profesor)
+	public function eliminarProfesor($rut_profesor)
     {
 		$this->db->where('RUT_USUARIO', $rut_profesor);
-		if($this->db->delete('usuario')) {
-			$retorno1=1;
-		}
-		else{
-			$retorno1=0;
-		}
-
-		if($retorno1==1){
-			return 1;
-		}
-		else{
-			return -1;
-		}
+		$this->db->where('ID_TIPO', TIPO_USR_PROFESOR);
+		$res = $this->db->delete('usuario');
+		return $res;
     }
 
 
+	public function getModulosTematicosProfesor($rutProfesor) {
+		$this->db->select('modulo_tematico.ID_MODULO_TEM AS id');
+		$this->db->select('modulo_tematico.NOMBRE_MODULO AS nombre');
+		$this->db->join('equipo_profesor', 'modulo_tematico.ID_MODULO_TEM = equipo_profesor.ID_MODULO_TEM');
+		$this->db->join('profe_equi_lider', 'equipo_profesor.ID_EQUIPO = profe_equi_lider.ID_EQUIPO');
+		$this->db->where('profe_equi_lider.RUT_USUARIO', $rutProfesor);
+		$query = $this->db->get('modulo_tematico');
+		//echo $this->db->last_query().'    ';
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
+	public function getModulosTematicosProfesorLider($rutProfesor) {
+    	$this->db->select('modulo_tematico.ID_MODULO_TEM AS id');
+		$this->db->select('modulo_tematico.NOMBRE_MODULO AS nombre');
+		$this->db->join('equipo_profesor', 'modulo_tematico.ID_MODULO_TEM = equipo_profesor.ID_MODULO_TEM');
+		$this->db->join('profe_equi_lider', 'equipo_profesor.ID_EQUIPO = profe_equi_lider.ID_EQUIPO');
+		$this->db->where('profe_equi_lider.RUT_USUARIO', $rutProfesor);
+		$this->db->where('profe_equi_lider.LIDER_PROFESOR', TRUE);
+		$query = $this->db->get('modulo_tematico');
+		//echo $this->db->last_query().'    ';
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
+	public function isProfesorLider($rutProfesor, $id_moduloTematico) {
+    	$this->db->select('COUNT(equipo_profesor.ID_EQUIPO) as resultado', FALSE);
+		$this->db->join('equipo_profesor', 'modulo_tematico.ID_MODULO_TEM = equipo_profesor.ID_MODULO_TEM');
+		$this->db->join('profe_equi_lider', 'equipo_profesor.ID_EQUIPO = profe_equi_lider.ID_EQUIPO');
+		$this->db->where('profe_equi_lider.RUT_USUARIO', $rutProfesor);
+		$this->db->where('profe_equi_lider.LIDER_PROFESOR', TRUE);
+		if ($id_moduloTematico != NULL) {
+			$this->db->where('modulo_tematico.ID_MODULO_TEM', $id_moduloTematico);
+		}
+		$query = $this->db->get('modulo_tematico');
+		//echo $this->db->last_query().'    ';
+		if ($query == FALSE) {
+			return array();
+		}
+		if($query->row()->resultado > 0)
+			return TRUE;
+		return FALSE;
+    }
 }
 
 ?>

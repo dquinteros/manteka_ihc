@@ -5,11 +5,10 @@
 ?>
 
 <body>
-	 <link href="/<?php echo config_item('dir_alias') ?>/css/especial.css" rel="stylesheet" type="text/css">
-	 <script src="/<?php echo config_item('dir_alias') ?>/javascripts/verificadorRut.js"></script>
-	 <script src="/<?php echo config_item('dir_alias') ?>/javascripts/jQuery.js"></script>
-     <script src="/<?php echo config_item('dir_alias') ?>/javascripts/jquery.bpopup.min.js"></script>
-     <script src="/<?php echo config_item('dir_alias') ?>/javascripts/funcionAyuda.js"></script>
+	<link href="/<?php echo config_item('dir_alias') ?>/css/especial.css" rel="stylesheet" type="text/css">
+	<script src="/<?php echo config_item('dir_alias') ?>/javascripts/verificadorRut.js"></script>
+	<script src="/<?php echo config_item('dir_alias') ?>/javascripts/jquery.js"></script>
+	<script src="/<?php echo config_item('dir_alias') ?>/javascripts/bootstrap-modal.js"></script>
      
 
 	<script type='text/javascript'>
@@ -26,22 +25,12 @@
 			var inputGuionRut = document.getElementById("inputGuionRut");
 			var guionCaracter = inputGuionRut.value;
 			var resultadoValidacionRut = calculaDigitoVerificador(rut, guionCaracter);
-			var iconoCargado = document.getElementById("icono_cargando");
-			$(icono_cargando).show();
+			$("#icono_cargando").show();
 
 			// Si el resultado de la validación es satisfactorio
 			if (resultadoValidacionRut == DV_CORRECTO) {
 				// Realizar un submit
-				$.ajax({
-				type: "POST", /* Indico que es una petición POST al servidor */
-				url: "<?php echo site_url("Login/postLoguearse") ?>", /* Se setea la url del controlador que responderá */
-				data: { rutEnvio: RecepcionRut}, /* Se codifican los datos que se enviarán al servidor usando el formato JSON */
-				success: function(respuesta) { /* Esta es la función que se ejecuta cuando el resultado de la respuesta del servidor es satisfactorio */
-					var datos = jQuery.parseJSON(respuesta);
-					var iconoCargado = document.getElementById("icono_cargando");
-					$(icono_cargando).hide();
-					}
-				});
+				
 				return true;
 			}
 			// Caso en que la validación entregue un error de validación
@@ -51,16 +40,7 @@
 				$(controlGroupRut).addClass("error");
 				var spanError = document.getElementById("spanInputRutError");
 				$(spanError).html("El rut introducido no es válido.");
-				$.ajax({
-				type: "POST", /* Indico que es una petición POST al servidor */
-				url: "<?php echo site_url("Login/postLoguearse") ?>", /* Se setea la url del controlador que responderá */
-				data: { rutEnvio: RecepcionRut}, /* Se codifican los datos que se enviarán al servidor usando el formato JSON */
-				success: function(respuesta) { /* Esta es la función que se ejecuta cuando el resultado de la respuesta del servidor es satisfactorio */
-					var datos = jQuery.parseJSON(respuesta);
-					var iconoCargado = document.getElementById("icono_cargando");
-					$(icono_cargando).hide();
-					}
-				});
+				$("#icono_cargando").hide();
 				return false;
 			}
 			// Caso que el RUT ingresado sea incorrecto
@@ -70,16 +50,7 @@
 				$(controlGroupRut).addClass("error");
 				var spanError = document.getElementById("spanInputRutError");
 				$(spanError).html("El dígito verificador o el rut no son válidos.");
-				$.ajax({
-				type: "POST", /* Indico que es una petición POST al servidor */
-				url: "<?php echo site_url("Login/postLoguearse") ?>", /* Se setea la url del controlador que responderá */
-				data: { rutEnvio: RecepcionRut}, /* Se codifican los datos que se enviarán al servidor usando el formato JSON */
-				success: function(respuesta) { /* Esta es la función que se ejecuta cuando el resultado de la respuesta del servidor es satisfactorio */
-					var datos = jQuery.parseJSON(respuesta);
-					var iconoCargado = document.getElementById("icono_cargando");
-					$(icono_cargando).hide();
-					}
-				});
+				$("#icono_cargando").hide();
 				return false;
 			}
 			return false;
@@ -94,14 +65,13 @@
 			<div class="span7 offset1">
 				<h2>Bienvenido a ManteKA</h2>
 						<p align="justify">
-							ManteKA es un sistema que le permite mantener una comunicación precisa y fluida con los participantes de la asignatura de Comunicación Efectiva perteneciente al módulo básico de ingeniería. 							A través de ManteKA es posible enviar correos electrónicos masivos a las personas que usted requiere 
-							Basta de enviar correos uno por uno!.
+							ManteKA es un sistema que le permite mantener las asistencias y calificaciones de todos los estudiantes del curso de Comunicación Efectiva. Permite, además, tener una visión local para cada profesor de cada módulo temático. Además, Manteka permite consolidar las notas parciales en una nota final considerando las asistencias a eventos masivos y las asistencias a las clases de cátedra de manera automática.
 						</p>
 			</div>
 			<fieldset class="span3">
 				<legend>Inicio de sesión</legend>
-					<div  id="my-button" class="pull-right pull-top" ><a class="btn_with_icon_solo" style="position: absolute; font-size: 45px !important; margin-top: -15px; margin-left: -25px;" href="<?php echo site_url("Ayuda/index") ?>">R</a></div>
-					<div id="element_to_pop_up"><img src="/<?php echo config_item('dir_alias') ?>/img/ayudaInicio.png"></div>
+					<div  id="my-button" class="pull-right pull-top" ><a class="btn_with_icon_solo" style="position: absolute; font-size: 45px !important; margin-top: -15px; margin-left: -25px;" onclick="$('#modalAyudaLogin').modal();" >R</a></div>
+					
 					<?php
 						$attributes = array('onSubmit' => 'return validacionRut()', 'id' => 'formLogin');
 						echo form_open('Login/LoginPost', $attributes);
@@ -149,9 +119,9 @@
 						<div class="control-group <?php echo $inputRut ?>" id="groupRut">
 							<label class="control-label" for="inputRut">Rut</label>
 							<div class="controls">
-							  	<input style="width:200px" type="text" name="inputRut" id="inputRut" maxlength="9" placeholder=" Ingrese rut, ejemplo: 17565743" value="<?php echo $rut_almacenado; ?>">
+							  	<input style="width:200px" type="text" name="inputRut" id="inputRut" maxlength="9" autofocus placeholder=" Ingrese rut, ejemplo: 17565743" value="<?php echo $rut_almacenado; ?>">
 							 	<STRONG>-</STRONG>
-							  	<input style="width:15px" type="text" name="inputGuionRut" maxlength="1" id="inputGuionRut"  placeholder="k" value="<?php echo $dv_almacenado; ?>">
+							  	<input style="width:15px" type="text" name="inputGuionRut" maxlength="1" id="inputGuionRut" placeholder="k" value="<?php echo $dv_almacenado; ?>">
 								<?php echo form_error('inputRut', '<span class="help-inline">', '</span>');?>
 								<span id="spanInputRutError" class="help-inline"></span>
 							</div>
@@ -193,6 +163,25 @@
 							</button>
 						</div>
 				<?php echo form_close(""); ?>
+
+				<div id="modalAyudaLogin" class="modal hide fade">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h3>¿Cómo iniciar sesión en manteka?</h3>
+					</div>
+					<div class="modal-body">
+						<p>
+							Si usted es profesor o coordinador de la asignatura de comunicación efectiva y es la primera vez que 
+							intenta ingresar a ManteKA, puede acceder de 3 formas distintas:
+						</p>
+						<p>Ingresando su RUT(Sin dígito verificador, sin puntos ni guiones) como contraseña</p>
+						<p>Ingresando a través de su correo electrónico Gmail con que esté registrado en ManteKa</p>
+						<p>Ingresando a la sección "<a href="<?php echo site_url("Login/olvidoPass")?>">¿Olvidó su contraseña?</a>"</p>
+					</div>
+					<div class="modal-footer">
+						<button class="btn" type="button" data-dismiss="modal">Cerrar</button>
+					</div>
+				</div>
 			</fieldset>
 		</div>
 	</div>

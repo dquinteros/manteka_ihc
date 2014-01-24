@@ -5,14 +5,6 @@
 * @author Grupo 4
 */
 class Model_estudiante extends CI_Model {
-	public $rut_estudiante = 0;
-	var $nombre1_estudiante = '';
-	var $nombre2_estudiante  = '';
-	var $apellido_paterno='';
-	var $apellido_materno='';
-	var $correo_estudiante='';
-	var $cod_seccion='';
-	var $cod_carrera='';
 
 	/**
 	* Inserta un estudiante en la base de datos
@@ -26,31 +18,40 @@ class Model_estudiante extends CI_Model {
 	* @param string $apellido_paterno Apellido paterno del estudiante a insertar
 	* @param string $apellido_materno Apellido mateno del estudiante a insertar
 	* @param string $correo_estudiante Correo del estudiante a insertar
-	* @param string $cod_seccion Código de la sección del estudiante a insertar
+	* @param string $ID_SECCION Código de la sección del estudiante a insertar
 	* @param string $cod_carrera Código de carrera del estudiante a insertar
 	* @return int 1 o -1 en caso de éxito o fracaso en la operación
 	*/
-	public function InsertarEstudiante($rut_estudiante,$nombre1_estudiante,$nombre2_estudiante,$apellido_paterno,$apellido_materno,$correo_estudiante,$cod_seccion,$cod_carrera) 
-	{
-		$data = array(					
-			'RUT_ESTUDIANTE' => $rut_estudiante ,
-			'NOMBRE1_ESTUDIANTE' => $nombre1_estudiante ,
-			'NOMBRE2_ESTUDIANTE' => $nombre2_estudiante ,
-			'APELLIDO1_ESTUDIANTE' => $apellido_paterno ,
-			'APELLIDO2_ESTUDIANTE' => $apellido_materno ,
-			'CORREO_ESTUDIANTE' => $correo_estudiante ,
-			'COD_SECCION' =>  $cod_seccion ,
-			'COD_CARRERA' => $cod_carrera 
-			);
-		$datos = $this->db->insert('estudiante',$data);
-		if($datos == true){
-			return 1;
+	public function agregarEstudiante($rut, $nombre1, $nombre2, $apellido1, $apellido2, $correo1, $correo2, $fono, $id_seccion, $cod_carrera) {
+		$data1 = array(
+			'RUT_USUARIO' => $rut,
+			'ID_TIPO' => TIPO_USR_ESTUDIANTE,
+			'PASSWORD_PRIMARIA' => md5($rut),
+			'CORREO1_USER' => $correo1,
+			'CORREO2_USER' => $correo2,
+			'NOMBRE1' => $nombre1,
+			'NOMBRE2' => $nombre2,
+			'APELLIDO1' => $apellido1,
+			'APELLIDO2' => $apellido2,
+			'TELEFONO' =>  $fono,
+			'LOGUEABLE' => FALSE
+		);
+		$data2 = array('RUT_USUARIO' => $rut, 'COD_CARRERA' => $cod_carrera, 'ID_SECCION' => $id_seccion);
+
+		$this->db->trans_start();
+		$datos2 = $this->db->insert('usuario',$data1);
+
+		$datos = $this->db->insert('estudiante',$data2);
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			return FALSE;
 		}
 		else{
-			return -1;
+			return TRUE;
 		}
-		
 	}
+
 	
 	/**
 	* Edita la información de un estudiante en la base de datos
@@ -64,28 +65,42 @@ class Model_estudiante extends CI_Model {
 	* @param string $apellido_paterno Apellido paterno del estudiante
 	* @param string $apellido_materno Apellido mateno del estudiante
 	* @param string $correo_estudiante Correo a editar del estudiante
-	* @param string $cod_seccion Código de la sección a editar del estudiante
+	* @param string $ID_SECCION Código de la sección a editar del estudiante
 	* @return int 1 o -1 en caso de éxito o fracaso en la operación
 	*/
-	public function ActualizarEstudiante($rut_estudiante,$nombre1_estudiante,$nombre2_estudiante,$apellido_paterno,$apellido_materno,$correo_estudiante,$seccion)
-	{
-		$data = array(					
-			'NOMBRE1_ESTUDIANTE' => $nombre1_estudiante ,
-			'NOMBRE2_ESTUDIANTE' => $nombre2_estudiante ,
-			'APELLIDO1_ESTUDIANTE' => $apellido_paterno ,
-			'APELLIDO2_ESTUDIANTE' => $apellido_materno ,
-			'CORREO_ESTUDIANTE' => $correo_estudiante,
-			'COD_SECCION'=>$seccion
-			);
-		$this->db->where('RUT_ESTUDIANTE', $rut_estudiante);
-		$datos = $this->db->update('estudiante',$data);
-        //echo $this->db->last_query();
-		if($datos == true){
-			return 1;
+	public function actualizarEstudiante($rut, $nombre1, $nombre2, $apellido1, $apellido2, $correo1, $correo2, $telefono, $carrera, $seccion) {
+		$data1 = array(
+			'RUT_USUARIO' => $rut,
+			'ID_TIPO' => TIPO_USR_AYUDANTE,
+			'PASSWORD_PRIMARIA' => md5($rut),
+			'CORREO1_USER' => $correo1,
+			'CORREO2_USER' => $correo2,
+			'NOMBRE1' => $nombre1,
+			'NOMBRE2' => $nombre2,
+			'APELLIDO1' => $apellido1,
+			'APELLIDO2' => $apellido2,
+			'TELEFONO' =>  $telefono
+		);
+		$data2 = array(
+			'ID_SECCION' => $seccion,
+			'COD_CARRERA' => $carrera
+		);
+
+		$this->db->trans_start();
+		$this->db->where('ID_TIPO', TIPO_USR_ESTUDIANTE);
+		$this->db->where('RUT_USUARIO', $rut);
+		$datos2 = $this->db->update('usuario', $data1);
+
+		$this->db->where('RUT_USUARIO', $rut);
+		$datos2 = $this->db->update('estudiante', $data2);
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			return FALSE;
 		}
 		else{
-			return -1;
-		}		
+			return TRUE;
+		}
 	}
 
 	/**
@@ -97,77 +112,22 @@ class Model_estudiante extends CI_Model {
 	* @param string $rut_estudiante Rut del estudiante que se eliminará de la base de datos
 	* @return int 1 o -1 en caso de éxito o fracaso en la operación
 	*/
-	public function EliminarEstudiante($rut_estudiante)
-	{
-		$this->db->where('RUT_ESTUDIANTE', $rut_estudiante);
-		$datos = $this->db->delete('estudiante'); 
-		
-		if($datos == true){
-			return 1;
+	public function eliminarEstudiante($rut_estudiante) {
+		$this->db->trans_start();
+		$this->db->where('RUT_USUARIO', $rut_estudiante);
+		$this->db->where('ID_TIPO', TIPO_USR_ESTUDIANTE);
+		$datos = $this->db->delete('usuario'); 
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			return FALSE;
 		}
 		else{
-			return -1;
+			return TRUE;
 		}
 	}
 
-	/**
-	* Obtiene los datos de todos lo estudiantes de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo la información de cada estudiante y se va guardando en un arreglo de dos dimensiones
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return array $lista Contiene la información de todos los estudiantes del sistema
-	*/
-	public function VerTodosLosEstudiantes()
-	{
-		
-		$this->db->order_by("APELLIDO2_ESTUDIANTE", "asc"); 
-		$query = $this->db->get('estudiante'); //Acá va el nombre de la tabla
-		// Se obtiene la fila del resultado de la consulta a la base de datos
 
-		
-		
-
-/***
-		$sql="SELECT * FROM estudiante ORDER BY APELLIDO1_ESTUDIANTE"; 
-		$datos=mysql_query($sql); 
-		echo mysql_error();**/
-
-		$contador = 0;
-		$lista = array();
-		foreach ($query->result_array() as $row) { //Bucle para ver todos los registros
-			$lista[$contador][0] = $row['RUT_ESTUDIANTE'];
-			$lista[$contador][1] = $row['NOMBRE1_ESTUDIANTE'];
-			$lista[$contador][2] = $row['NOMBRE2_ESTUDIANTE'];
-			$lista[$contador][3] = $row['APELLIDO1_ESTUDIANTE'];
-			$lista[$contador][4] = $row['APELLIDO2_ESTUDIANTE'];
-			$lista[$contador][5] = $row['CORREO_ESTUDIANTE'];
-			$lista[$contador][6] = $row['COD_SECCION'];
-			$lista[$contador][7] = $row['COD_CARRERA'];
-
-			$contador = $contador + 1;
-		}
-		return $lista;
-		
-	}
-	
-
-	public function	getEstudiantesSeccion($cod_seccion){
-		$this->db->select('RUT_ESTUDIANTE AS rut');
-		$this->db->select('NOMBRE1_ESTUDIANTE AS nombre1');
-		$this->db->select('NOMBRE2_ESTUDIANTE AS nombre2');
-		$this->db->select('APELLIDO1_ESTUDIANTE AS apellido1');
-		$this->db->select('APELLIDO2_ESTUDIANTE AS apellido2');
-		$this->db->where('COD_SECCION', $cod_seccion);
-		$this->db->order_by("APELLIDO1_ESTUDIANTE", "asc");
-		$query = $this->db->get('estudiante');
-		if ($query == FALSE) {
-			return array();
-		}
-		return $query->result();
-
-	}
-	
 	/**
 	* Obtiene los nombre y rut de todos los estudiantes del sistema
 	*
@@ -176,16 +136,95 @@ class Model_estudiante extends CI_Model {
 	*
 	* @return array $lista Contiene la información de todos los estudiantes del sistema
 	*/
-	public function getAllAlumnos()
-	{
-		$this->db->select('RUT_ESTUDIANTE AS rut');
-		$this->db->select('NOMBRE1_ESTUDIANTE AS nombre1');
-		$this->db->select('NOMBRE2_ESTUDIANTE AS nombre2');
-		$this->db->select('APELLIDO1_ESTUDIANTE AS apellido1');
-		$this->db->select('APELLIDO2_ESTUDIANTE AS apellido2');
-		$this->db->select('CORREO_ESTUDIANTE as correo');
-		$this->db->order_by("APELLIDO1_ESTUDIANTE", "asc");
+	public function getAllEstudiantes() {
+		$this->db->select('estudiante.RUT_USUARIO AS id');
+		$this->db->select('estudiante.RUT_USUARIO AS rut');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('NOMBRE1 AS nombre2');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('APELLIDO2 AS apellido2');
+		$this->db->select('TELEFONO AS telefono');
+		$this->db->select('CORREO1_USER AS correo1');
+		$this->db->select('CORREO2_USER AS correo2');
+		$this->db->join('usuario', 'estudiante.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->order_by('APELLIDO1', 'asc');
 		$query = $this->db->get('estudiante');
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
+	public function	getEstudiantesBySeccion($id_seccion){
+		$this->db->select('estudiante.RUT_USUARIO AS rut');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('NOMBRE2 AS nombre2');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('APELLIDO2 AS apellido2');
+		$this->db->select('TELEFONO AS telefono');
+		$this->db->select('CORREO1_USER AS correo1');
+		$this->db->select('CORREO2_USER AS correo2');
+		$this->db->select('carrera.COD_CARRERA AS cod_carrera');
+		$this->db->select('carrera.NOMBRE_CARRERA AS carrera');
+		$this->db->select('estudiante.RUT_USUARIO AS id');
+		$this->db->join('usuario', 'estudiante.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->join('carrera', 'estudiante.COD_CARRERA = carrera.COD_CARRERA');
+		$this->db->where('estudiante.ID_SECCION', $id_seccion);
+		$this->db->order_by('APELLIDO1 ASC, APELLIDO2 ASC');
+		$query = $this->db->get('estudiante');
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
+	public function isEstudiante($rut_estudiante) {
+		$this->db->select('estudiante.RUT_USUARIO AS rut');
+		$this->db->where('estudiante.RUT_USUARIO', $rut_estudiante);
+		$query = $this->db->get('estudiante');
+		if ($query == FALSE) {
+			return FALSE;
+		}
+		if ($query->num_rows() > 0) {
+			return TRUE;
+		}
+		return FALSE;
+
+
+	}
+
+
+	public function getEstudiantesBySeccionForAsistencia($id_seccion) {
+
+		$this->db->select('estudiante.RUT_USUARIO AS posicion');
+		$this->db->select('estudiante.RUT_USUARIO AS rut');
+		$this->db->select('CONCAT_WS(\' \', APELLIDO1, APELLIDO2, NOMBRE1, NOMBRE2 ) AS nombres', FALSE);
+		$this->db->where('estudiante.ID_SECCION', $id_seccion);
+		$this->db->join('usuario', 'estudiante.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->order_by('APELLIDO1 ASC, APELLIDO2 ASC, NOMBRE1 ASC, NOMBRE2 ASC');
+		$query = $this->db->get('estudiante');
+		if ($query == FALSE) {
+			return array();
+		}
+		return $query->result();
+	}
+
+
+	public function getEstudiantesBySeccionForAsistenciaFormatCSV($id_seccion) {
+		$this->db->select('estudiante.RUT_USUARIO AS posicion');
+		$this->db->select('estudiante.RUT_USUARIO AS RUT');
+		$this->db->select('APELLIDO1 AS PATERNO');
+		$this->db->select('APELLIDO2 AS MATERNO');
+		$this->db->select('CONCAT_WS(\' \', NOMBRE1, NOMBRE2 ) AS NOMBRES', FALSE);
+		$this->db->where('estudiante.ID_SECCION', $id_seccion);
+		$this->db->join('usuario', 'estudiante.RUT_USUARIO = usuario.RUT_USUARIO');
+		$this->db->order_by('APELLIDO1 ASC, APELLIDO2 ASC, NOMBRE1 ASC, NOMBRE2 ASC');
+		$query = $this->db->get('estudiante');
+		if ($query == FALSE) {
+			return array();
+		}
 		return $query->result();
 	}
 
@@ -202,26 +241,41 @@ class Model_estudiante extends CI_Model {
 	* @return Se devuelve un array de objetos alumnos con sólo su nombre y rut
 	* @author Víctor Flores
 	*/
-	public function getAlumnosByFilter($texto, $textoFiltrosAvanzados)
-	{
-		$this->db->select('RUT_ESTUDIANTE AS id');
-		$this->db->select('NOMBRE1_ESTUDIANTE AS nombre1');
+	public function getEstudiantesByFilter($texto, $textoFiltrosAvanzados, $rut_usr_solicitante, $tipo_usr_solicitante) {
+		$this->db->select('usuario.RUT_USUARIO AS id');
+		$this->db->select('NOMBRE1 AS nombre1');
 		//$this->db->select('NOMBRE2_ESTUDIANTE AS nombre2');
-		$this->db->select('APELLIDO1_ESTUDIANTE AS apellido1');
+		$this->db->select('APELLIDO1 AS apellido1');
 		$this->db->select('NOMBRE_CARRERA AS carrera');
-		$this->db->select('NOMBRE_SECCION AS seccion');
+		$this->db->select('CONCAT_WS(\'-\', LETRA_SECCION, NUMERO_SECCION ) AS seccion');
+		$this->db->join('usuario', 'usuario.RUT_USUARIO = estudiante.RUT_USUARIO');
 		$this->db->join('carrera', 'carrera.COD_CARRERA = estudiante.COD_CARRERA');
-		$this->db->join('seccion', 'seccion.COD_SECCION = estudiante.COD_SECCION');
-		$this->db->order_by('APELLIDO1_ESTUDIANTE', 'asc');
+		$this->db->join('seccion', 'seccion.ID_SECCION = estudiante.ID_SECCION', 'LEFT OUTER');
+		if ($tipo_usr_solicitante == TIPO_USR_AYUDANTE) {
+			$this->db->join('planificacion_clase', 'seccion.ID_SECCION = planificacion_clase.ID_SECCION');
+			$this->db->join('ayu_profe', 'planificacion_clase.ID_AYU_PROFE = ayu_profe.ID_AYU_PROFE');
+			$this->db->where('ayu_profe.RUT_USUARIO', $rut_usr_solicitante);
+		}
+		if ($tipo_usr_solicitante == TIPO_USR_PROFESOR) {
+			$this->db->join('planificacion_clase', 'seccion.ID_SECCION = planificacion_clase.ID_SECCION');
+			$this->db->join('ayu_profe', 'planificacion_clase.ID_AYU_PROFE = ayu_profe.ID_AYU_PROFE');
+			$this->db->where('ayu_profe.PRO_RUT_USUARIO', $rut_usr_solicitante);
+		}
+		if ($tipo_usr_solicitante == TIPO_USR_ESTUDIANTE) {
+			//Deben ser sólo los estudiantes de su misma sección
+		}
+		$this->db->order_by('APELLIDO1', 'asc');
+		$this->db->group_by('usuario.RUT_USUARIO');
 
 		if ($texto != "") {
-			$this->db->like('RUT_ESTUDIANTE',$texto);
-			$this->db->or_like('NOMBRE1_ESTUDIANTE',$texto);
-			$this->db->or_like('NOMBRE2_ESTUDIANTE',$texto);
-			$this->db->or_like('APELLIDO1_ESTUDIANTE',$texto);
-			$this->db->or_like('APELLIDO2_ESTUDIANTE',$texto);
+			$this->db->like('usuario.RUT_USUARIO',$texto);
+			$this->db->or_like('NOMBRE1',$texto);
+			$this->db->or_like('NOMBRE2',$texto);
+			$this->db->or_like('APELLIDO1',$texto);
+			$this->db->or_like('APELLIDO2',$texto);
 			$this->db->or_like('NOMBRE_CARRERA',$texto);
-			$this->db->or_like('NOMBRE_SECCION',$texto);
+			$this->db->or_like('LETRA_SECCION',$texto);
+			$this->db->or_like('NUMERO_SECCION',$texto);
 		} 
 		else {
 			
@@ -233,15 +287,15 @@ class Model_estudiante extends CI_Model {
 			define("BUSCAR_POR_SECCION", 4);
 			
 			if($textoFiltrosAvanzados[BUSCAR_POR_RUT] != ''){
-				$this->db->like("RUT_ESTUDIANTE", $textoFiltrosAvanzados[BUSCAR_POR_RUT]);
+				$this->db->like("usuario.RUT_USUARIO", $textoFiltrosAvanzados[BUSCAR_POR_RUT]);
 			}			
 			if ($textoFiltrosAvanzados[BUSCAR_POR_NOMBRE] != '') {
-				$this->db->where("(NOMBRE1_ESTUDIANTE LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%' OR NOMBRE2_ESTUDIANTE LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%')");
+				$this->db->where("(NOMBRE1 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%' OR NOMBRE2 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]."%')");
 				//$this->db->like("(NOMBRE1_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]);
 				//$this->db->or_like("NOMBRE2_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_NOMBRE]);
 			}
 			if ($textoFiltrosAvanzados[BUSCAR_POR_APELLIDO] != '') {
-				$this->db->where("(APELLIDO1_ESTUDIANTE LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%' OR APELLIDO2_ESTUDIANTE LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%')");
+				$this->db->where("(APELLIDO1 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%' OR APELLIDO2 LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%')");
 				//$this->db->like("(APELLIDO1_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]);
 				//$this->db->or_like("APELLIDO2_AYUDANTE", $textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]);
 			}
@@ -249,7 +303,7 @@ class Model_estudiante extends CI_Model {
 				$this->db->like("NOMBRE_CARRERA", $textoFiltrosAvanzados[BUSCAR_POR_CARRERA]);
 			}
 			if ($textoFiltrosAvanzados[BUSCAR_POR_SECCION] != '') {
-				$this->db->like("NOMBRE_SECCION", $textoFiltrosAvanzados[BUSCAR_POR_SECCION]);
+				$this->db->where("(LETRA_SECCION LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%' OR NUMERO_SECCION LIKE '%".$textoFiltrosAvanzados[BUSCAR_POR_APELLIDO]."%')");
 			}
 		}
 		$query = $this->db->get('estudiante');
@@ -273,85 +327,41 @@ class Model_estudiante extends CI_Model {
    * @return Se retorna un objeto cuyos atributos son los atributos del estudiante, FALSE si no se encontró
    */
 	public function getDetallesEstudiante($rut) {
-		$this->db->select('RUT_ESTUDIANTE AS rut');
-		$this->db->select('NOMBRE1_ESTUDIANTE AS nombre1');
-		$this->db->select('NOMBRE2_ESTUDIANTE AS nombre2');
-		$this->db->select('APELLIDO1_ESTUDIANTE AS apellido1');
-		$this->db->select('APELLIDO2_ESTUDIANTE AS apellido2');
-		$this->db->select('CORREO_ESTUDIANTE AS correo');
+		$this->db->select('estudiante.RUT_USUARIO AS id');
+		$this->db->select('estudiante.RUT_USUARIO AS rut');
+		$this->db->select('NOMBRE1 AS nombre1');
+		$this->db->select('NOMBRE2 AS nombre2');
+		$this->db->select('APELLIDO1 AS apellido1');
+		$this->db->select('APELLIDO2 AS apellido2');
+		$this->db->select('TELEFONO AS telefono');
+		$this->db->select('CORREO1_USER AS correo1');
+		$this->db->select('CORREO2_USER AS correo2');
+		$this->db->select('estudiante.COD_CARRERA AS cod_carrera');
 		$this->db->select('NOMBRE_CARRERA AS carrera');
-		$this->db->select('estudiante.COD_SECCION AS seccion');
-		$this->db->select('NOMBRE_SECCION AS nombre_seccion');
+		$this->db->select('estudiante.ID_SECCION AS id_seccion');
+		$this->db->select('CONCAT_WS(\'-\', LETRA_SECCION, NUMERO_SECCION ) AS seccion');
+		$this->db->join('usuario', 'estudiante.RUT_USUARIO = usuario.RUT_USUARIO');
 		$this->db->join('carrera', 'carrera.COD_CARRERA = estudiante.COD_CARRERA');
-		$this->db->join('seccion', 'seccion.COD_SECCION = estudiante.COD_SECCION', 'LEFT OUTER');
-		$this->db->where('RUT_ESTUDIANTE', $rut);
+		$this->db->join('seccion', 'seccion.ID_SECCION = estudiante.ID_SECCION', 'LEFT OUTER');
+		$this->db->where('usuario.RUT_USUARIO', $rut);
 		$query = $this->db->get('estudiante');
+		//echo $this->db->last_query();
 		if ($query == FALSE) {
 			return array();
 		}
-		//echo $this->db->last_query();
 		return $query->row();
 	}
 
 
-	public function getSecciones() {
-		$this->db->select('COD_SECCION AS cod');
-		$this->db->select('NOMBRE_SECCION AS nombre');
-		$query = $this->db->get('seccion');
-		return $query->result();
-	}
 
-	
-	/**
-	* Obtiene los datos de todas las carreras de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo la información de cada carrera y se va guardando en un arreglo de dos dimensiones
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return array $lista Contiene la información de todas las carreras del sistema
-	*/
-	public function VerCarreras()
-	{
-		
-		$query = $this->db->get('carrera'); //Acá va el nombre de la tabla
-		// Se obtiene la fila del resultado de la consulta a la base de datos
-		/***$sql="SELECT * FROM carrera"; 
-		$datos=mysql_query($sql); **/
 
-		$contador = 0;
-		$lista = array();
-		foreach ($query->result_array() as $row) { //Bucle para ver todos los registros
-			$lista[$contador][0] = $row['COD_CARRERA'];
-			$lista[$contador][1] = $row['NOMBRE_CARRERA'];			
-			$contador = $contador + 1;
-		}		
-		return $lista;
-	}
 
-	/**
-	* Obtiene los datos de todas las secciones de la base de datos
-	*
-	* Se crea la consulta y luego se ejecuta ésta. Luego con un ciclo se va extrayendo el código de cada sección y se va guardando en un arreglo
-	* Finalmente se retorna la lista con los datos. 
-	*
-	* @return array $lista Contiene la información de todas las secciones del sistema
-	*/	
-	public function VerSecciones(){
-		$this->db->order_by("NOMBRE_SECCION", "asc");
-		$query = $this->db->get('seccion');	
 
-		$datos = $query->result(); 
-		$contador = 0;
-		$lista = array();
-		foreach ($datos as $row) { 
-			$lista[$contador] = array();
-			$lista[$contador][0] = $row->COD_SECCION;
-			$lista[$contador][1] = $row->NOMBRE_SECCION;
-			$contador = $contador + 1;
-		}
-		return $lista;
-	}
-	
+
+/* FUNCIONES NO LIMPIADAS AÚN*/
+
+
+
 
 	/**
 	* Camobia todos los estudiantes con rut en $listaRut a la seección $seccionOUT 
@@ -360,121 +370,44 @@ class Model_estudiante extends CI_Model {
 	* @param $listaRut Lista de rutd correspondedientes a los estudiantes que se cambiaran de sección
 	* @return $conformacion resultado de la función que es uno en el caso exitoso y -1 en el caso fallido
 	*/	
-	function CambioDeSecciones($seccionOUT,$listaRut){
-		$contador = 0;
-		$confirmacion = 1;
-		while ($contador<count($listaRut)){
-			$data = array(
-				'COD_SECCION' => $seccionOUT
+	function cambioDeSeccion($seccionOUT, $listaRut){
+		if (is_array($listaRut) === FALSE) {
+			return FALSE;
+		}
+		$data = array(
+				'ID_SECCION' => $seccionOUT
 				);
-			$this->db->where('RUT_ESTUDIANTE', $listaRut[$contador]);
-			$datos = $this->db->update('estudiante',$data);
-			if($datos != true){
-				$confirmacion = -1;
-			}
 
-			$contador = $contador + 1;
-		}
-		return $confirmacion;
-	}
-	
+		$this->db->trans_start();
 
-	/**
-	*  
-	* Obtiene todos los rut para todasla secciones de manteka
-	*
-	* Primero realiza una consulta por medio de active record para obtener los rut de los usuarios,
-	* luego repite la misma operación para ayudantes y estudiantes.
-	*
-	* @return array $lista Contiene la información de los rut de todas las secciones del sistema
-	*/	
+		//Busco que la sección de destino existe
+		$this->db->select('COUNT(ID_SECCION) AS resultado');
+		$query = $this->db->where('ID_SECCION', $seccionOUT);
+		$query = $this->db->get('seccion');
+		if ($query == FALSE) {
+			$this->db->trans_complete();
+			return FALSE;
+		}
+		if ($query->row()->resultado <= 0) {
+			$this->db->trans_complete();
+			return FALSE;
+		}
 
-	public function getAllRut(){
-		$lista = array();
-		$contador = 0;
-		
-		//lista usuarios
-		$this->db->select('RUT_USUARIO');
-		$this->db->from('usuario');
-		$query = $this->db->get();
-		$datos = $query->result();
-		foreach ($datos as $row) {
-			$lista[$contador] = $row->RUT_USUARIO;
-			$contador++;
-		}
-		//lista ayudantes
-		$this->db->select('RUT_AYUDANTE');
-		$this->db->from('ayudante');
-		$query = $this->db->get();
-		$datos = $query->result();
-		foreach ($datos as $row) {
-			$lista[$contador] = $row->RUT_AYUDANTE;
-			$contador++;
-		}
-		//lista alumnos
-		$this->db->select('RUT_ESTUDIANTE');
-		$this->db->from('estudiante');
-		$query = $this->db->get();
-		$datos = $query->result();
-		foreach ($datos as $row) {
-			$lista[$contador] = $row->RUT_ESTUDIANTE;
-			$contador++;
-		}
-		return $lista;  	
-	}
-	
+		$this->db->flush_cache();
 
+		foreach ($listaRut as $value) {
+			$this->db->where('RUT_USUARIO', $value);
+			$datos = $this->db->update('estudiante', $data);
+			$this->db->flush_cache();
+		}
+		$this->db->trans_complete();
 
-	/**
-	* Obtiene los rut de la base de datos y los compara con el entregado como parametro
-	*
-	* Consulta la base de datos por medio de active record para obtener los rut de usuarios y los agrega a $lista,
-	* luego realiza la misma operaciópara ayudantes y estudiantes, finalmente se compara $rut con cada elemento de $lista
-	* de encontrarse coincidencia el rut ya existe en el sistema y se retorna -1 en caso contrario se retorna 1
-	*
-	* @param $rut el rut de cual se quiere comprobar su existencia en manteka
-	* @return 1 o -1 , 1 para el caso de que el rut no exista -1 en caso de que el rut ya existe en la base de datos
-	*/	
-	public function rutExisteM($rut){
-	//return $rut;
-		$lista = array();
-		$contador = 0;
-		
-		//lista usuarios
-		$this->db->select('RUT_USUARIO');
-		$this->db->from('usuario');
-		$query = $this->db->get();
-		$datos = $query->result();
-		foreach ($datos as $row) {
-			$lista[$contador] = $row->RUT_USUARIO;
-			$contador++;
+		if ($this->db->trans_status() === FALSE) {
+			return FALSE;
 		}
-		//lista ayudantes
-		$this->db->select('RUT_AYUDANTE');
-		$this->db->from('ayudante');
-		$query = $this->db->get();
-		$datos = $query->result();
-		foreach ($datos as $row) {
-			$lista[$contador] = $row->RUT_AYUDANTE;
-			$contador++;
+		else{
+			return TRUE;
 		}
-		//lista alumnos
-		$this->db->select('RUT_ESTUDIANTE');
-		$this->db->from('estudiante');
-		$query = $this->db->get();
-		$datos = $query->result();
-		foreach ($datos as $row) {
-			$lista[$contador] = $row->RUT_ESTUDIANTE;
-			$contador++;
-		}
-		$contador = 0;
-		while($contador < count($lista)){
-			if(strtolower($lista[$contador]) == strtolower($rut)){				
-				return -1;
-			}
-			$contador = $contador + 1;
-		}
-		return 1;
 	}
 
 
@@ -489,14 +422,19 @@ class Model_estudiante extends CI_Model {
 	* @return bool TRUE o FALSE segun corresponda si el rut es valido o no.
 	*/	
 
-	function validaRut($rut){
+	function validaRut($rut, $dvExistente){
 		$suma = 0;
-		if(strpos($rut,"-")==false){
+		$RUT[0] = $rut;
+		$RUT[1] = $dvExistente;
+		/*
+		if(strpos($rut,"-")==false) {
 			$RUT[0] = substr($rut, 0, -1);
 			$RUT[1] = substr($rut, -1);
-		}else{
+		}
+		else {
 			$RUT = explode("-", trim($rut));
 		}
+		*/
 		$elRut = str_replace(".", "", trim($RUT[0]));
 		$ffactor = 2;
 		for($i = strlen($elRut)-1; $i >= 0; $i--):
@@ -517,6 +455,20 @@ class Model_estudiante extends CI_Model {
 	}
 
 
+	public function rutExiste($rut) {
+		$this->db->select('COUNT(RUT_USUARIO) AS resultado');
+		$query = $this->db->where('RUT_USUARIO', $rut);
+		$query = $this->db->get('usuario');
+		if ($query == FALSE) {
+			return FALSE;
+		}
+		if ($query->row()->resultado > 0) {
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+
 	/**
 	* Función que valida que los campos ingresados posean solo caracteres validos 
 	*
@@ -529,24 +481,32 @@ class Model_estudiante extends CI_Model {
 	*/	
 	function validarDatos($campo,$tipo){
 		switch ($tipo) {
-			case "carrera":				
-			return filter_var($campo, FILTER_VALIDATE_INT);     
+			case "carrera":
+				return filter_var($campo, FILTER_VALIDATE_INT);
 			break;
+				case "coordinacion":
+				$reg = array("options"=>array("regexp"=>"/^[a-zA-Z\-]+$/"));
+				return filter_var($campo, FILTER_VALIDATE_REGEXP,$reg);
 			case "seccion":
-			$reg = array("options"=>array("regexp"=>"/^[a-zA-Z0-9\-]+$/"));
-			return filter_var($campo, FILTER_VALIDATE_REGEXP,$reg);
-			break;
+				$reg = array("options"=>array("regexp"=>"/^[0-9\-]+$/"));
+				return filter_var($campo, FILTER_VALIDATE_REGEXP,$reg);
+				break;
 			case "nombre":
-			$reg = array("options"=>array("regexp"=>"/^[a-zA-ZäáàëéèíìöóòúùñçÄÁÀËÉÈÍÌÖÓÒÚÙÑÇ \-]+$/"));			
-			return filter_var(trim($campo), FILTER_VALIDATE_REGEXP,$reg);
-			break;
+				$reg = array("options"=>array("regexp"=>"/^[a-zA-ZäáàëéèíìöóòúùñçÄÁÀËÉÈÍÌÖÓÒÚÙÑÇ \-.]+$/"));
+				return filter_var(trim($campo), FILTER_VALIDATE_REGEXP,$reg);
+				break;
 			case "rut":
-			$reg = array("options"=>array("regexp"=>"/^[k0-9\-\.]+$/"));
-			return filter_var($campo, FILTER_VALIDATE_REGEXP,$reg);
-			break;
+				$reg = array("options"=>array("regexp"=>"/^[k0-9\-\.]+$/"));
+				return filter_var($campo, FILTER_VALIDATE_REGEXP,$reg);
+				break;
 			case "correo":
-			return filter_var($campo, FILTER_VALIDATE_EMAIL);
-			break;
+				if (trim($campo) != "") {
+					return filter_var($campo, FILTER_VALIDATE_EMAIL);
+				}
+				else {
+					return TRUE;
+				}
+				break;
 		} 
 		return FALSE;
 	} 
@@ -557,20 +517,21 @@ class Model_estudiante extends CI_Model {
 	* Se obtiene el el codigo de sección que corresponde al nombre entregado como parametro
 	*
 	* @param $seccion es el nombre de la sección que se evaluará
-	* @return $sec->COD_SECCION es el codigo de la sección que corresponde al nombre ingresado en $seccion
+	* @return $sec->ID_SECCION es el codigo de la sección que corresponde al nombre ingresado en $seccion
 	*/	
-	function validarSeccion($seccion){
+	function validarSeccion($coord, $seccion){
 		
-		$query = $this->db->select('seccion.COD_SECCION');
-		$query = $this->db->from('seccion');
-		$query = $this->db->where('NOMBRE_SECCION',$seccion);
-		$query = $this->db->get();
+		$query = $this->db->select('seccion.ID_SECCION');
+		$query = $this->db->where('LETRA_SECCION', $coord);
+		$query = $this->db->where('NUMERO_SECCION', $seccion);
+		$query = $this->db->get('seccion');
+		//echo $this->db->last_query().'      ';
 		$sec = $query->row();
 		if ($sec == FALSE) {
 			return FALSE;
 		}	
 
-		return $sec->COD_SECCION;
+		return $sec->ID_SECCION;
 	}
 
 	/**
@@ -609,156 +570,204 @@ class Model_estudiante extends CI_Model {
 	* @param $archivo ruta del archivo con la información de los estudiantes que se desea ingresarf a manteka
 	* @return $stack lineas del archivo csv que contienen errores retorna FALSE en caso de error critico
 	*/
-	public function cargaMasiva($archivo){
-
-		if(!file_exists($archivo) || !is_readable($archivo))
+	public function cargaMasiva($archivo, $rutProfesor, $esCoordinador) { //FALTA AGREGAR A AUDITORIA
+		if(!file_exists($archivo) || !is_readable($archivo)) {
 			return FALSE;
+		}
 
 		$ff = fopen($archivo, "r");
 
 		$header = array();
-		$data = array();		
+		$data = array();
 		$splitArray = array();
 		$stack  = array();
 		$c = 1;
 		$flag = FALSE;
-		while(($linea = fgets($ff)) !== FALSE)
-		{
+		$hayErrores = FALSE;
+		if (!$esCoordinador) {
+			$header[] = "<br>No tiene permisos de administrador para la carga masiva de estudiantes";
+			$stack[$c] = $header;
+			return $stack;
+		}
+		while(($linea = fgets($ff)) !== FALSE) {
 
-			if(!$header){
+			if(!$header) { //Si está vacio
 				$header = explode(';',trim($linea));
-				if((strcmp($header[0], 'RUT_ESTUDIANTE') != 0)||(count($header)!=8)){
+				if (count($header) != 10) {
+					$header[] = "<br>La cantidad de elementos de la cabecera no es válida";
+					$stack[$c] = $header;
 					fclose($ff);
 					unlink($archivo);
-					return FALSE;
-				}				
+					return $stack;
+				}
+				if((strcmp($header[0], 'RUT') != 0)) {
+					$header[] = "<br>La cabecera del archivo no es válida";
+					$stack[$c] = $header;
+					fclose($ff);
+					unlink($archivo);
+					return $stack;
+				}
 			}
-			else
-			{
+			else {
+				$hayErrores = FALSE;
 				$linea =  explode(';',$linea);
-				if(($data = array_combine($header, $linea)) == FALSE) {
-					$linea[] = "</br>El numero de argumentos en la linea es incorrecto</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				if(($data = array_combine($header, $linea)) == FALSE) { //DEBE TENER EL MISMO LARGO QUE EL HEADER
+					$linea[] = "<br>El numero de argumentos en la linea es incorrecto";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				$validador = $this->validarDatos($data['RUT_ESTUDIANTE'],"rut");
-				if(!$validador){
-					$linea[] = "</br>El rut del estudiante tiene caracteres no válidos</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				$validador = $this->validarDatos($data['RUT'],"rut");
+				if(!$validador) {
+					$linea[] = "<br>El rut del estudiante tiene caracteres no válidos";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				try{
-					if(($this->validaRut($data['RUT_ESTUDIANTE'])) == FALSE){
-						$linea[] = "</br>El rut del estudiante no es valido</br>";
-					$stack[$c] = $linea;
-						fclose($ff);
-						unlink($archivo);
-						return $stack;
+				try {
+					if(($this->validaRut($data['RUT'], $data['DIG'])) == FALSE) {
+						$linea[] = "<br>El rut del estudiante no es valido";
+						//$stack[count($stack)] = $linea;
+						$hayErrores = TRUE;
 					}
-				}catch(Exception $e){
-					$linea[] = "</br>El rut del estudiante no es valido</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
 				}
-				$data['RUT_ESTUDIANTE'] =  preg_replace('[\-]','',$data['RUT_ESTUDIANTE']);
-				$data['RUT_ESTUDIANTE'] =  preg_replace('[\.]','',$data['RUT_ESTUDIANTE']);
-				$data['RUT_ESTUDIANTE'] = substr($data['RUT_ESTUDIANTE'], 0, -1);				
-				$validador = $this->rutExisteM($data['RUT_ESTUDIANTE']);
-				if($validador == -1){
-					$linea[] = "</br>El rut de estudiante ya existe en manteka</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;		
-				}				
-				$validador = $this->validarDatos($data['COD_CARRERA'],"carrera");
-				if(!$validador){
-					$linea[] = "</br>La carrera del estudiante es erronea, solo se admiten numeros.</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				catch(Exception $e) {
+					$linea[] = "<br>El rut del estudiante no es valido";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				$validador = $this->validarDatos($data['COD_SECCION'],"seccion");
-				if(!$validador){
-					$linea[] = "</br>EL nombre de la seccion no existe en manteka</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				$data['RUT'] =  preg_replace('[\-]','',$data['RUT']); //Quito los guiones
+				$data['RUT'] =  preg_replace('[\.]','',$data['RUT']); //Quito los puntos
+				//$data['RUT'] = substr($data['RUT'], 0, -1);	//Elimino dígito verificador			
+				$validador = $this->rutExiste($data['RUT']);
+				if($validador) {
+					$linea[] = "<br>El rut de estudiante ya existe en manteka";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				$data['CORREO_ESTUDIANTE'] = trim($data['CORREO_ESTUDIANTE']);				
-				$validador = $this->validarDatos($data['CORREO_ESTUDIANTE'],"correo");
-				if(!$validador){
-					$linea[] = "</br>El correo del estudiante no tiene un formato válido</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				$validador = $this->validarDatos($data['COD_CARRERA'], "carrera");
+				if(!$validador) {
+					$linea[] = "<br>La carrera del estudiante es erronea, solo se admiten numeros.";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				$validador = $this->validarDatos($data['NOMBRE1_ESTUDIANTE'].$data['NOMBRE2_ESTUDIANTE'].$data['APELLIDO1_ESTUDIANTE'].$data['APELLIDO2_ESTUDIANTE'],"nombre");
-				if(!$validador){
-					$linea[] = "</br>El nombre del estudiante tiene caracteres no válidos</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				$validador = $this->validarDatos($data['COORD'], "coordinacion");
+				if(!$validador) {
+					$linea[] = "<br>EL nombre de la coordinación no es válido";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				if(($data['COD_SECCION'] = $this->validarSeccion($data['COD_SECCION'])) == FALSE){
-					$linea[] = "</br>La sección no se encuentra en la base de datos</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
+				$validador = $this->validarDatos($data['SECCION'], "seccion");
+				if(!$validador) {
+					$linea[] = "<br>EL nombre de la sección no es válida";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
 				}
-				if(($data['COD_CARRERA'] = $this->validarCarrera($data['COD_CARRERA'])) == FALSE){
-					$linea[] = "</br>La carrera no se encuentra en la base de datos</br>";
-					$stack[$c] = $linea;
-					fclose($ff);
-					unlink($archivo);
-					return $stack;
-				}				
+				$data['CORREO1'] = trim($data['CORREO1']);				
+				$validador = $this->validarDatos($data['CORREO1'],"correo");
+				if(!$validador) {
+					$linea[] = "<br>El correo del estudiante no tiene un formato válido";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
+				}
+				$validador = $this->validarDatos($data['NOMBRE1'].$data['NOMBRE2'].$data['APELLIDO1'].$data['APELLIDO2'],"nombre");
+				if(!$validador) {
+					$linea[] = "<br>El nombre del estudiante tiene caracteres no válidos";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
+				}
+				if(($data['ID_SECCION'] = $this->validarSeccion($data['COORD'], $data['SECCION'])) == FALSE) {
+					$linea[] = "<br>La sección no se encuentra en la base de datos";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
+				}
+				if(($data['COD_CARRERA'] = $this->validarCarrera($data['COD_CARRERA'])) == FALSE) {
+					$linea[] = "<br>La carrera no se encuentra en la base de datos";
+					//$stack[count($stack)] = $linea;
+					$hayErrores = TRUE;
+				}
 				$flag = TRUE;
 
+				if ($hayErrores)
+					$stack[count($stack)] = $linea;
 			}
-			$c++;						
-		}	
+			$c++;
+		}
 		fclose($ff);
-		$ffa = fopen($archivo, "r");	
-		if ($flag) {			
-			while(($linea = fgets($ffa)) !== FALSE)
-			{
-				if(!$header){
-					$header = explode(';',trim($linea));
+		if ($hayErrores) {
+			unlink($archivo);
+			return $stack;
+		}
+
+		$ffa = fopen($archivo, "r");
+
+		//AHORA REALMENTE ABRO EL ARCHIVO PARA INSERTAR LUEGO QUE SE COMPROBÓ QUE TODO ESTÁ OK
+		$header = array();
+		if ($flag) {
+			while(($linea = fgets($ffa)) !== FALSE) {
+				if(!$header) {
+					$header = explode(';', trim($linea));
 				}
-				else
-				{
-					$linea =  explode(';',$linea);
-					$data = array_combine($header, $linea);				
-					$data['COD_SECCION'] = $this->validarSeccion($data['COD_SECCION']);
-					$data['RUT_ESTUDIANTE'] =  preg_replace('[\-]','',$data['RUT_ESTUDIANTE']);
-					$data['RUT_ESTUDIANTE'] =  preg_replace('[\.]','',$data['RUT_ESTUDIANTE']);
-					$data['RUT_ESTUDIANTE'] = substr($data['RUT_ESTUDIANTE'], 0, -1);	
+				else {
+					$this->db->trans_start();
 
-					$this->db->insert('estudiante',$data);
+					$linea =  explode(';', $linea);
+					$data = array_combine($header, $linea);
+					//Trimeo todos los elementos
+					foreach ($data as $key => $value) {
+						$data[$key] = trim($value);
+					}
+					$data['ID_SECCION'] = NULL;
+					if (($data['COORD'] !== "") && ($data['SECCION'] !== "")) {		
+						$data['ID_SECCION'] = $this->validarSeccion($data['COORD'], $data['SECCION']);
+					}
 
+					if ($data['RUT'] !== "") {
+						$data['RUT'] =  preg_replace('[\-]', '', $data['RUT']);
+						$data['RUT'] =  preg_replace('[\.]', '', $data['RUT']);
+						//$data['RUT'] = substr($data['RUT'], 0, -1);
+					}
+					$datosUsuario = array();
+					if ($data['RUT'] === "") $data['RUT'] = NULL;
+					$datosUsuario['RUT_USUARIO'] = $data['RUT'];
+					$datosUsuario['ID_TIPO'] = TIPO_USR_ESTUDIANTE;
+					$datosUsuario['LOGUEABLE'] = FALSE;
+					if ($data['CORREO1'] === "") $data['CORREO1'] = NULL;
+					$datosUsuario['CORREO1_USER'] = $data['CORREO1'];
+					if ($data['NOMBRE1'] === "") $data['NOMBRE1'] = NULL;
+					$datosUsuario['NOMBRE1'] = $data['NOMBRE1'];
+					if ($data['NOMBRE2'] === "") $data['NOMBRE2'] = NULL;
+					$datosUsuario['NOMBRE2'] = $data['NOMBRE2'];
+					if ($data['APELLIDO1'] === "") $data['APELLIDO1'] = NULL;
+					$datosUsuario['APELLIDO1'] = $data['APELLIDO1'];
+					if ($data['APELLIDO2'] === "") $data['APELLIDO2'] = NULL;
+					$datosUsuario['APELLIDO2'] = $data['APELLIDO2'];
+					$datosUsuario['PASSWORD_PRIMARIA'] = md5($data['RUT']);
+					$this->db->insert('usuario', $datosUsuario);
+
+					$datosEstudiante = array();
+					$datosEstudiante['RUT_USUARIO'] = $data['RUT'];
+					if ($data['COD_CARRERA'] === "") $data['COD_CARRERA'] = NULL;
+					$datosEstudiante['COD_CARRERA'] = $data['COD_CARRERA'];
+					if ($data['ID_SECCION'] === "") $data['ID_SECCION'] = NULL;
+					$datosEstudiante['ID_SECCION'] = $data['ID_SECCION'];
+					$this->db->insert('estudiante', $datosEstudiante);
+
+					$this->db->trans_complete();
+
+					if ($this->db->trans_status() === FALSE) {
+						return FALSE;
+					}
 				}
 
 			}
-		}else{
+		}
+		else {
 			fclose($ffa);
 			unlink($archivo);
 			return FALSE;
 		}
 		fclose($ffa);
 		unlink($archivo);
-		return $stack;		
+		return $stack;
 	}
 
 }

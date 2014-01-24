@@ -1,5 +1,5 @@
 <!--	Menú que contiene los distintos módulos que soporta el sistema ManteKA							-->
-<!--	Contiene las secciones Correos, Docentes, Secciones, Planificación, Salas, Alumnos, Informes	-->
+<!--	Contiene las secciones Correos, Docentes, Secciones, Planificación, Salas, Estudiantes, Informes	-->
 <!--	Para cada una de las secciones se determina si está seleccionada o no							-->
 <!--	Se recibe en la vista la variable $menuSuperiorAbierto desde el controlador						-->
 <!--	Determinando cuál es el módulo que está seleccionado											-->
@@ -9,14 +9,16 @@
 		if (!isset($menuSuperiorAbierto)) {
 			$menuSuperiorAbierto = "Correos";
 		}
-		$id_tipo_usuario = TIPO_USR_COORDINADOR; //Se debe borrar cuando todo se porte a MasterManteka
+		if (!isset($id_tipo_usuario)) {
+			$id_tipo_usuario = TIPO_USR_COORDINADOR; //Se debe borrar cuando todo se porte a MasterManteka
+		}
 		// Las operaciones por defecto no poseen clases
 		$Correos = "";
 		$Docentes = "";
 		$Secciones = "";
 		$Planificacion = "";
 		$Salas = "";
-		$Alumnos = "";
+		$Estudiantes = "";
 		$Reportes = "";
 
 		//	En caso de que tal operación específica este seleccionada.
@@ -36,8 +38,8 @@
 		else if ($menuSuperiorAbierto == "Salas") {
 			$Salas = 'class="active"';
 		}
-		else if ($menuSuperiorAbierto == "Alumnos") {
-			$Alumnos = 'class="active"';
+		else if ($menuSuperiorAbierto == "Estudiantes") {
+			$Estudiantes = 'class="active"';
 		}
 		else if ($menuSuperiorAbierto == "Reportes") {
 			$Reportes = 'class="active"';
@@ -53,29 +55,29 @@
 ?>
 
 	<div class="navbar pull-right">
-		<div class="navbar-inner" style="margin-left:0px;">
+		<div class="navbar-inner" style="width:815px;">
 			<ul class="nav">
 				<li <?php echo $Correos;?> >
-					<a class="btn_with_icon" style="width:100px;" href="<?php echo site_url("Correo/index") ?>">M Correos<span id="botonCorreosSuperior"><?php echo $mensajesNoLeidos ?></span></a>
+					<a class="btn_with_icon" style="max-width:100px;" href="<?php echo site_url("Correo/index") ?>">M Correos<span id="botonCorreosSuperior"><?php echo $mensajesNoLeidos ?></span></a>
 				</li>
 				<li <?php echo $Docentes;?> >
-					<a class="btn_with_icon" href="<?php echo site_url("Profesores/index") ?>">L Docencia</a>
+					<a class="btn_with_icon" style="max-width:100px;" href="<?php echo site_url("Profesores/index") ?>">L Docencia</a>
 				</li>
 				<li <?php echo $Secciones;?> >
-					<a class="btn_with_icon" href="<?php echo site_url("Secciones/index") ?>">K Secciones</a>
+					<a class="btn_with_icon" style="max-width:100px;" href="<?php echo site_url("Secciones/index") ?>">K Secciones</a>
 				</li>
 				<li <?php echo $Planificacion;?> >
-					<a class="btn_with_icon" href="<?php echo site_url("Planificacion/index") ?>">É Planificación</a>
+					<a class="btn_with_icon" style="max-width:100px;" href="<?php echo site_url("Planificacion/index") ?>">É Planificación</a>
 				</li>
 				<li <?php echo $Salas;?> >
-					<a class="btn_with_icon" href="<?php echo site_url("Salas/index") ?>">S Salas</a>
+					<a class="btn_with_icon" style="max-width:90px;" href="<?php echo site_url("Salas/index") ?>">S Salas</a>
 				</li>
-				<li <?php echo $Alumnos;?> >
-					<a class="btn_with_icon" href="<?php echo site_url("Alumnos/index") ?>">Ù Alumnos</a>
+				<li <?php echo $Estudiantes;?> >
+					<a class="btn_with_icon" style="max-width:95px;" href="<?php echo site_url("Estudiantes/index") ?>">Ù Estudiantes</a>
 				</li>
 				<?php if ($id_tipo_usuario == TIPO_USR_COORDINADOR) { ?>
 				<li <?php echo $Reportes;?> >
-					<a class="btn_with_icon" href="<?php echo site_url("ReportesSistema/index") ?>">E Reportes</a>
+					<a class="btn_with_icon" style="max-width:100px;" href="<?php echo site_url("ReportesSistema/index") ?>">E Reportes</a>
 				</li>
 				<?php } ?>
 			</ul>

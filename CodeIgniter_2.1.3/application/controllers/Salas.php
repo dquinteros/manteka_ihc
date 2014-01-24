@@ -32,20 +32,15 @@ class Salas extends MasterManteka {
 	* Se carga el modelo de salas,finalmente se carga la vista nuevamente con todos los datos para permitir ver otra sala.
 	*
 	*/
-	public function verSalas()
-	{
-		//Se comprueba que quien hace esta petición este logueado
-		$rut = $this->session->userdata('rut'); //Se comprueba si el usuario tiene sesi?n iniciada
-		if ($rut == FALSE) {
-			redirect('/Login/', ''); //Se redirecciona a login si no tiene sesi?n iniciada
+	public function verSalas() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		// se carga el modelo, los datos de la vista, las funciones a utilizar del modelo
-		$datos_vista = 0;		
+		$datos_vista = array();
 		$subMenuLateralAbierto = "verSalas"; 
 		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->load->model('Model_sala');
+		$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR, TIPO_USR_PROFESOR);
 		$this->cargarTodo("Salas", 'cuerpo_salas_ver', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
 	}
 
@@ -56,24 +51,22 @@ class Salas extends MasterManteka {
 	* Finalmente se cargan todos los datos.
 	*
 	*/
-	public function agregarSalas()
-    {
-		//Se comprueba que quien hace esta petición este logueado
-		$rut = $this->session->userdata('rut'); //Se comprueba si el usuario tiene sesi?n iniciada
-		if ($rut == FALSE) {
-			redirect('/Login/', ''); //Se redirecciona a login si no tiene sesi?n iniciada
+	public function agregarSala() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		// se carga el modelo, los datos de la vista, las funciones a utilizar del modelo
-		$datos_vista = 0;		
-		$subMenuLateralAbierto = "agregarSalas"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->load->model('Model_sala');
-		$datos_vista = array('implemento' => $this->Model_sala->VerTodosLosImplementos());
-		$this->cargarTodo("Salas", 'cuerpo_salas_agregar', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			$datos_vista = array();
+			$this->load->model('Model_sala');
+			$datos_vista['implementos'] = $this->Model_sala->getAllImplementos();
 
+			$subMenuLateralAbierto = "agregarSala"; //Para este ejemplo, los informes no tienen submenu lateral
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarTodo("Salas", 'cuerpo_salas_agregar', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		}
     }
 	
 	/**
@@ -86,34 +79,35 @@ class Salas extends MasterManteka {
 	* Éxito, si no un mensaje con el error, en ambos casos se muestra un enlace para volver a agregar salas.
 	*
 	*/
-	public function ingresarSalas()
-	{	
-		
-		
-		$this->load->model('Model_sala');
-        $num_sala = $this->input->post("num_sala");
-        $ubicacion = $this->input->post("ubicacion");
-        $capacidad = $this->input->post("capacidad");
-		$implementos = $this->input->post("cod_implemento");
-        $confirmacion = $this->Model_sala->InsertarSala($num_sala,$ubicacion,$capacidad,$implementos);
-        
-		if ($confirmacion==1){
-			$datos_plantilla["titulo_msj"] = "Acción Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha ingresado la sala con éxito";
-			$datos_plantilla["tipo_msj"] = "alert-success";
+	public function postAgregarSala() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		else{
-			$datos_plantilla["titulo_msj"] = "Acción No Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Ha ocurrido un error en el ingreso en base de datos";
-			$datos_plantilla["tipo_msj"] = "alert-error";	
-		}
-		$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
-		$datos_plantilla["redirecTo"] = "Salas/agregarSalas"; //Acá se pone el controlador/metodo hacia donde se redireccionará
-		$datos_plantilla["nombre_redirecTo"] = "Agregar Salas"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
+		if ($this->input->server('REQUEST_METHOD') == 'POST') {
+			$this->load->model('Model_sala');
+			$num_sala = $this->input->post("num_sala");
+			$ubicacion = $this->input->post("ubicacion");
+			$capacidad = $this->input->post("capacidad");
+			$implementos = $this->input->post("id_implementos");
+			$confirmacion = $this->Model_sala->agregarSala($num_sala, $ubicacion, $capacidad, $implementos);
 
+			if ($confirmacion == TRUE){
+				$datos_plantilla["titulo_msj"] = "Acción Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha ingresado la sala con éxito";
+				$datos_plantilla["tipo_msj"] = "alert-success";
+			}
+			else{
+				$datos_plantilla["titulo_msj"] = "Acción No Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Ha ocurrido un error en el ingreso en base de datos";
+				$datos_plantilla["tipo_msj"] = "alert-error";	
+			}
+			$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
+			$datos_plantilla["redirecTo"] = "Salas/agregarSala"; //Acá se pone el controlador/metodo hacia donde se redireccionará
+			$datos_plantilla["nombre_redirecTo"] = "Agregar Sala"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
+		}
 	}
     
 
@@ -125,25 +119,22 @@ class Salas extends MasterManteka {
 	* Finalmente se cargan todos los datos.
 	*
 	*/
-    public function editarSalas()
-    {
-		//Se comprueba que quien hace esta petición este logueado
-		$rut = $this->session->userdata('rut'); //Se comprueba si el usuario tiene sesi?n iniciada
-		if ($rut == FALSE) {
-			redirect('/Login/', ''); //Se redirecciona a login si no tiene sesi?n iniciada
+    public function editarSala() {
+    	if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		// se carga el modelo, los datos de la vista, las funciones a utilizar del modelo
-    	$datos_vista = 0;		
-		$subMenuLateralAbierto = "editarSalas"; //Para este ejemplo, los informes no tienen submenu lateral
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->load->model('Model_sala');
-		$datos_vista = array('implementos' => $this->Model_sala->VerTodosLosImplementosSimple());
-	
-		$this->cargarTodo("Salas", 'cuerpo_salas_editar', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			// se carga el modelo, los datos de la vista, las funciones a utilizar del modelo
+	    	$datos_vista = array();
+	    	$this->load->model('Model_sala');
+	    	$datos_vista['implementos'] = $this->Model_sala->getAllImplementos();
 
-	
+			$subMenuLateralAbierto = "editarSala"; //Para este ejemplo, los informes no tienen submenu lateral
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarTodo("Salas", 'cuerpo_salas_editar', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		}
     }
 	
 	/**
@@ -157,34 +148,37 @@ class Salas extends MasterManteka {
 	* Éxito, si no un mensaje con el error, en ambos casos se muestra un enlace para volver a editar salas.
 	*
 	*/
-	public function modificarSalas()
-	{
-		$this->load->model('Model_sala');
-		$cod_sala = $this->input->post("codEditar");
-		$cod_salaF=$this->input->post("cod_sala");
-	    $num_sala = $this->input->post("num_sala");
-		$ubicacion = $this->input->post("ubicacion");
-		$capacidad = $this->input->post("capacidad");
-		$implementos = $this->input->post("implementos");
-        $confirmacion = $this->Model_sala->ActualizarSala($cod_salaF,$num_sala,$ubicacion,$capacidad,$implementos);  
-		
-        // se muestra mensaje de operación realizada
-    	if ($confirmacion==1){
-			$datos_plantilla["titulo_msj"] = "Acción Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha modificado la sala con éxito";
-			$datos_plantilla["tipo_msj"] = "alert-success";
+	public function postEditarSala() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		else{
-			$datos_plantilla["titulo_msj"] = "Acción No Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Ha ocurrido un error en la edición en base de datos";
-			$datos_plantilla["tipo_msj"] = "alert-error";	
+		if ($this->input->server('REQUEST_METHOD') == 'POST') {
+			$this->load->model('Model_sala');
+			$cod_sala = $this->input->post("id_sala");
+			$num_sala = $this->input->post("num_sala");
+			$ubicacion = $this->input->post("ubicacion");
+			$capacidad = $this->input->post("capacidad");
+			$implementos = $this->input->post("id_implementos");
+			$confirmacion = $this->Model_sala->actualizarSala($cod_sala, $num_sala, $ubicacion, $capacidad, $implementos);  
+
+			// se muestra mensaje de operación realizada
+			if ($confirmacion == TRUE){
+				$datos_plantilla["titulo_msj"] = "Acción Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha modificado la sala con éxito";
+				$datos_plantilla["tipo_msj"] = "alert-success";
+			}
+			else{
+				$datos_plantilla["titulo_msj"] = "Acción No Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Ha ocurrido un error en la edición en base de datos";
+				$datos_plantilla["tipo_msj"] = "alert-error";	
+			}
+			$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
+			$datos_plantilla["redirecTo"] = "Salas/editarSala"; //Acá se pone el controlador/metodo hacia donde se redireccionará
+			$datos_plantilla["nombre_redirecTo"] = "Editar Sala"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
 		}
-		$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
-		$datos_plantilla["redirecTo"] = "Salas/editarSalas"; //Acá se pone el controlador/metodo hacia donde se redireccionará
-		$datos_plantilla["nombre_redirecTo"] = "Editar Salas"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
 	}
 
 	/**
@@ -194,23 +188,19 @@ class Salas extends MasterManteka {
 	* Mostrarán marcados.Además para cargar los nombres de todas las salas exitentes.
 	* Finalmente se cargan todos los datos.
 	*/
-	 public function borrarSalas()
-    {
-		//Se comprueba que quien hace esta petición este logueado
-		$rut = $this->session->userdata('rut'); //Se comprueba si el usuario tiene sesi?n iniciada
-		if ($rut == FALSE) {
-			redirect('/Login/', ''); //Se redirecciona a login si no tiene sesi?n iniciada
+	 public function eliminarSala() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		// se carga el modelo, los datos de la vista, las funciones a utilizar del modelo
-    	$datos_vista = 0;		
-		$subMenuLateralAbierto = "borrarSalas"; 
-		$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->load->model('Model_sala');
-		$datos_vista = array('sala' => $this->Model_sala->VerTodasLasSalas(), 'salaImplemento' => $this->Model_sala->VerTodosLosImplementosSala());
-		$this->cargarTodo("Salas", 'cuerpo_salas_eliminar', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
-
+		if ($this->input->server('REQUEST_METHOD') == 'GET') {
+			// se carga el modelo, los datos de la vista, las funciones a utilizar del modelo
+			$datos_vista = array();		
+			$subMenuLateralAbierto = "eliminarSala"; 
+			$muestraBarraProgreso = FALSE; //Indica si se muestra la barra que dice anterior - siguiente
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarTodo("Salas", 'cuerpo_salas_eliminar', "barra_lateral_salas", $datos_vista, $tipos_usuarios_permitidos, $subMenuLateralAbierto, $muestraBarraProgreso);
+		}
     }
 	
 	/**
@@ -223,30 +213,34 @@ class Salas extends MasterManteka {
 	* Éxito, si no un mensaje con el error, en ambos casos se muestra un enlace para volver a borrar salas.
 	*
 	*/
-	public function eliminarSalas()
-    {
-		$this->load->model('Model_sala');
-		$cod_sala = $this->input->post("cod_sala");
-		$confirmacion = $this->Model_sala->EliminarSala($cod_sala);
-		
-		if ($confirmacion==1){
-			$datos_plantilla["titulo_msj"] = "Acción Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Se ha eliminado la sala con éxito";
-			$datos_plantilla["tipo_msj"] = "alert-success";
+	public function postEliminarSala() {
+		if (!$this->isLogged()) {
+			$this->invalidSession();
+			return;
 		}
-		else{
-			$datos_plantilla["titulo_msj"] = "Acción No Realizada";
-			$datos_plantilla["cuerpo_msj"] = "Ha ocurrido un error en la eliminación en base de datos";
-			$datos_plantilla["tipo_msj"] = "alert-error";	
+		if ($this->input->server('REQUEST_METHOD') == 'POST') {
+			$this->load->model('Model_sala');
+			$idSalaEliminar = $this->input->post("idSalaEliminar");
+			$confirmacion = $this->Model_sala->eliminarSala($idSalaEliminar);
+			
+			if ($confirmacion == TRUE){
+				$datos_plantilla["titulo_msj"] = "Acción Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Se ha eliminado la sala con éxito";
+				$datos_plantilla["tipo_msj"] = "alert-success";
+			}
+			else{
+				$datos_plantilla["titulo_msj"] = "Acción No Realizada";
+				$datos_plantilla["cuerpo_msj"] = "Ha ocurrido un error en la eliminación en base de datos";
+				$datos_plantilla["tipo_msj"] = "alert-error";	
+			}
+			$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
+			$datos_plantilla["redirecTo"] = "Salas/eliminarSala"; //Acá se pone el controlador/metodo hacia donde se redireccionará
+			$datos_plantilla["nombre_redirecTo"] = "Borrar Sala"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
+			$tipos_usuarios_permitidos = array(TIPO_USR_COORDINADOR);
+			$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
 		}
-		$datos_plantilla["redirectAuto"] = FALSE; //Esto indica si por javascript se va a redireccionar luego de 5 segundos
-		$datos_plantilla["redirecTo"] = "Salas/borrarSalas"; //Acá se pone el controlador/metodo hacia donde se redireccionará
-		$datos_plantilla["nombre_redirecTo"] = "Borrar Salas"; //Acá se pone el nombre del sitio hacia donde se va a redireccionar
-		$tipos_usuarios_permitidos = array();
-		$tipos_usuarios_permitidos[0] = TIPO_USR_COORDINADOR;
-		$this->cargarMsjLogueado($datos_plantilla, $tipos_usuarios_permitidos);
-
 	}
+
 
     /**
 	* Obtener los datos de las salas que coincidan con la búsqueda del filtro seleccionado.
@@ -258,8 +252,11 @@ class Salas extends MasterManteka {
 	* @return json Resultado de la busqueda en forma de objeto json
 	*
 	*/
-    public function postBusquedaSalas(){
-    	if (!$this->isLogged()) {
+    public function getSalasAjax() {
+    	if (!$this->input->is_ajax_request()) {
+			return;
+		}
+		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
@@ -270,18 +267,19 @@ class Salas extends MasterManteka {
 		$resultado = $this->Model_sala->getSalasByFilter($textoFiltro, $textoFiltrosAvanzados);
 		/* ACÁ SE ALMACENA LA BÚSQUEDA REALIZADA POR EL USUARIO */
 		if (count($resultado) > 0) {
-			$this->load->model('model_busquedas');
+			$this->load->model('Model_busqueda');
 			//Se debe insertar sólo si se encontraron resultados
-			$this->model_busquedas->insertarNuevaBusqueda($textoFiltro, 'salas', $this->session->userdata('rut'));
+			$this->Model_busqueda->insertarNuevaBusqueda($textoFiltro, 'salas', $this->session->userdata('rut'));
 			$cantidad = count($textoFiltrosAvanzados);
 			for ($i = 0; $i < $cantidad; $i++) {
-				$this->model_busquedas->insertarNuevaBusqueda($textoFiltrosAvanzados[$i], 'salas', $this->session->userdata('rut'));
+				$this->Model_busqueda->insertarNuevaBusqueda($textoFiltrosAvanzados[$i], 'salas', $this->session->userdata('rut'));
 			}
 		}
 		echo json_encode($resultado);
 
     }
-	
+
+
 	/**
 	* Obtener el detalle de una sala determinada
 	* Primero se comprueba que el usuario tenga la sesión iniciada, en caso que no sea así se le 
@@ -291,8 +289,10 @@ class Salas extends MasterManteka {
 	* @return json Resultado de la busqueda en forma de objeto json
 	*
 	*/
-    public function postDetallesSala(){
-    	//Se comprueba que quien hace esta petición de ajax esté logueado
+	public function getDetallesSalaAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
@@ -303,7 +303,24 @@ class Salas extends MasterManteka {
 		$resultado = $this->Model_sala->getDetallesSala($num_sala);
 		echo json_encode($resultado);
     }
-	
+
+
+    public function getImplementosBySalaAjax() {
+    	if (!$this->input->is_ajax_request()) {
+			return;
+		}
+		if (!$this->isLogged()) {
+			//echo 'No estás logueado!!';
+			return;
+		}
+
+		$id_sala = $this->input->post('id_sala');
+		$this->load->model('Model_sala');
+		$resultado = $this->Model_sala->getImplementosSala($id_sala);
+		echo json_encode($resultado);
+    }
+
+
 	/**
 	* Comprobar que el número de sala a ingresar no se encuentra en el sistema
 	* Primero se comprueba que el usuario tenga la sesión iniciada, en caso que no sea así se 
@@ -313,7 +330,10 @@ class Salas extends MasterManteka {
 	* @return json Resultado de la busqueda en forma de objeto json
 	*
 	*/
-	public function numExiste() {
+	public function numSalaExisteAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
@@ -321,10 +341,11 @@ class Salas extends MasterManteka {
 		$this->load->model('Model_sala');
 		$num = $this->input->post('num_post');
 
-		$resultado = $this->Model_sala->numSala($num);
+		$resultado = $this->Model_sala->numSalaExiste($num);
 		echo json_encode($resultado);
 	}
-	
+
+
 	/**
 	* Comprobar que el número de sala a que se está editando no pertenezca a otra sala del sistema
 	* Primero se comprueba que el usuario tenga la sesión iniciada, en caso que no sea así se le redirecciona al login
@@ -336,15 +357,18 @@ class Salas extends MasterManteka {
 	* @return json Resultado de la busqueda en forma de objeto json
 	*
 	*/
-	public function numExisteE() {
+	public function numSalaExisteEditarAjax() {
+		if (!$this->input->is_ajax_request()) {
+			return;
+		}
 		if (!$this->isLogged()) {
 			//echo 'No estás logueado!!';
 			return;
 		}
 		$this->load->model('Model_sala');
+		$cod = $this->input->post('id_sala_post');
 		$num = $this->input->post('num_post');
-		$cod = $this->input->post('cod_post');
-		$resultado = $this->Model_sala->numSalaE($num,$cod);
+		$resultado = $this->Model_sala->numSalaExceptoExiste($cod, $num);
 		echo json_encode($resultado);
 	}
 }

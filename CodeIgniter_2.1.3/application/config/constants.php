@@ -39,9 +39,11 @@ define('FOPEN_READ_WRITE_CREATE_STRICT',		'x+b');
 
 #Constantes de usuario
 #Acá se define el tipo de usuario de la aplicación
+define('TIPO_USR_ANONYMOUS', 0);
 define('TIPO_USR_PROFESOR', 1);
 define('TIPO_USR_COORDINADOR', 2);
-define('TIPO_USR_ALUMNO', 3); //Para futuro
+define('TIPO_USR_ESTUDIANTE', 3);
+define('TIPO_USR_AYUDANTE', 4);
 
 
 /* End of file constants.php */

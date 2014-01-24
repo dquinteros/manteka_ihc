@@ -9,23 +9,32 @@
 		if (!isset($subVistaLateralAbierta)) {
 			$subVistaLateralAbierta = "verPlanificacion";
 		}
-		$id_tipo_usuario = TIPO_USR_COORDINADOR; //Se debe borrar cuando todo se porte a MasterManteka
+		if (!isset($id_tipo_usuario)) {
+			$id_tipo_usuario = TIPO_USR_COORDINADOR; //Se debe borrar cuando todo se porte a MasterManteka
+		}
 		// Las operaciones por defecto no poseen clases
 		$verPlanificacion = "";
+		$agregarPlanificacion = "";
+		$eliminarPlanificacion = "";
+		$asignacionActual = "";
 		$verModulos = "";
-		$agregarModulos = "";
-		$editarModulos = "";
-		$borrarModulos = "";
+		$agregarModulo = "";
+		$editarModulo = "";
+		$eliminarModulo = "";
 		$verSesiones = "";
-		$agregarSesiones = "";
-		$editarSesiones = "";
-		$borrarSesiones = "";
-
+		$agregarSesion = "";
+		$editarSesion = "";
+		$eliminarSesion = "";
+		$verActividades = "";
+		$agregarActividad = "";
+		$editarActividad = "";
+		$eliminarActividad = "";
 
 		// Variables que determinan que grupo de operaciones se encuentra abierta
 		$inPlanificacion = "";
 		$inModulos = "";
 		$inSesiones = "";
+		$inActividades = "";
 
 		//	En caso de que tal operación específica este seleccionada.
 		//	La operación seleccionada tiene clase "active"
@@ -33,37 +42,65 @@
 			$verPlanificacion = 'class="active"';
 			$inPlanificacion = 'in';
 		}
+		else if ($subVistaLateralAbierta == "agregarPlanificacion"){
+			$agregarPlanificacion = 'class="active"';
+			$inPlanificacion = "in";
+		}
+		else if ($subVistaLateralAbierta == "asignacionActual"){
+			$asignacionActual = 'class="active"';
+			$inPlanificacion = "in";
+		}
+		else if ($subVistaLateralAbierta == "eliminarPlanificacion"){
+			$eliminarPlanificacion = 'class="active"';
+			$inPlanificacion = "in";
+		}
 		else if ($subVistaLateralAbierta == "verModulos") {
 			$verModulos = 'class="active"';
 			$inModulos = 'in';
 		}
-		else if ($subVistaLateralAbierta == "agregarModulos") {
-			$agregarModulos = 'class="active"';
+		else if ($subVistaLateralAbierta == "agregarModulo") {
+			$agregarModulo = 'class="active"';
 			$inModulos = 'in';
 		}
-		else if ($subVistaLateralAbierta == "editarModulos") {
-			$editarModulos = 'class="active"';
+		else if ($subVistaLateralAbierta == "editarModulo") {
+			$editarModulo = 'class="active"';
 			$inModulos = 'in';
 		}
-		else if ($subVistaLateralAbierta == "borrarModulos") {
-			$borrarModulos = 'class="active"';
+		else if ($subVistaLateralAbierta == "eliminarModulo") {
+			$eliminarModulo = 'class="active"';
 			$inModulos = 'in';
 		}
 		else if ($subVistaLateralAbierta == "verSesiones") {
 			$verSesiones = 'class="active"';
 			$inSesiones = 'in';
 		}
-		else if ($subVistaLateralAbierta == "agregarSesiones") {
-			$agregarSesiones = 'class="active"';
+		else if ($subVistaLateralAbierta == "agregarSesion") {
+			$agregarSesion = 'class="active"';
 			$inSesiones = 'in';
 		}
-		else if ($subVistaLateralAbierta == "editarSesiones") {
-			$editarSesiones = 'class="active"';
+		else if ($subVistaLateralAbierta == "editarSesion") {
+			$editarSesion = 'class="active"';
 			$inSesiones = 'in';
 		}
-		else if ($subVistaLateralAbierta == "borrarSesiones") {
-			$borrarSesiones = 'class="active"';
+		else if ($subVistaLateralAbierta == "eliminarSesion") {
+			$eliminarSesion = 'class="active"';
 			$inSesiones = 'in';
+		}
+		else if ($subVistaLateralAbierta == "verActividades") {
+			$verActividades = 'class="active"';
+			$inActividades = 'in';
+		}
+		else if ($subVistaLateralAbierta == "agregarActividad") {
+			$agregarActividad = 'class="active"';
+			$inActividades = 'in';
+		}
+		else if ($subVistaLateralAbierta == "editarActividad") {
+			$editarActividad = 'class="active"';
+			$inActividades = 'in';
+		}
+		else if ($subVistaLateralAbierta == "eliminarActividad") {
+			$eliminarActividad = 'class="active"';
+			$inActividades = 'in';
 		}
 	?>
 
@@ -77,7 +114,11 @@
 			<div id="collapseTwo" class="accordion-body collapse <?php echo $inPlanificacion; ?>">
 				<div class="accordion-inner nav nav-list">
 					<li <?php echo $verPlanificacion; ?> ><a href="<?php echo site_url("Planificacion/verPlanificacion")?>">Ver planificación</a></li>
-					
+					<?php if ($id_tipo_usuario == TIPO_USR_COORDINADOR) { ?>
+						<li <?php echo $agregarPlanificacion; ?> ><a href="<?php echo site_url("Planificacion/agregarPlanificacion")?>">Agregar planificación</a></li>
+						<li <?php echo $eliminarPlanificacion; ?> ><a href="<?php echo site_url("Planificacion/eliminarPlanificacion")?>">Eliminar planificación</a></li>
+						<li <?php echo $asignacionActual; ?> ><a href="<?php echo site_url("Planificacion/asignacionActual")?>">Asignación actual</a></li>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
@@ -90,9 +131,9 @@
 				<div class="accordion-inner nav nav-list">
 					<li <?php echo $verModulos; ?> ><a href="<?php echo site_url("Modulos/verModulos")?>">Ver módulos</a></li>
 					<?php if ($id_tipo_usuario == TIPO_USR_COORDINADOR) { ?>
-						<li <?php echo $agregarModulos; ?> ><a href="<?php echo site_url("Modulos/agregarModulos")?>">Agregar módulos</a></li>
-						<li <?php echo $editarModulos; ?> ><a href="<?php echo site_url("Modulos/editarModulos")?>">Editar módulos</a></li>
-						<li <?php echo $borrarModulos; ?> ><a href="<?php echo site_url("Modulos/borrarModulos")?>">Borrar módulos</a></li>
+						<li <?php echo $agregarModulo; ?> ><a href="<?php echo site_url("Modulos/agregarModulo")?>">Agregar módulos</a></li>
+						<li <?php echo $editarModulo; ?> ><a href="<?php echo site_url("Modulos/editarModulo")?>">Editar módulos</a></li>
+						<li <?php echo $eliminarModulo; ?> ><a href="<?php echo site_url("Modulos/eliminarModulo")?>">Eliminar módulos</a></li>
 					<?php } ?>
 				</div>
 			</div>
@@ -106,9 +147,25 @@
 				<div class="accordion-inner nav nav-list">
 					<li <?php echo $verSesiones; ?> ><a href="<?php echo site_url("Sesiones/verSesiones")?>">Ver sesiones</a></li>
 					<?php if ($id_tipo_usuario == TIPO_USR_COORDINADOR) { ?>
-						<li <?php echo $agregarSesiones; ?> ><a href="<?php echo site_url("Sesiones/ingresarSesiones")?>">Agregar sesiones</a></li>
-						<li <?php echo $editarSesiones; ?> ><a href="<?php echo site_url("Sesiones/editarSesiones")?>">Editar sesiones</a></li>
-						<li <?php echo $borrarSesiones; ?> ><a href="<?php echo site_url("Sesiones/borrarSesiones")?>">Borrar sesiones</a></li>
+						<li <?php echo $agregarSesion; ?> ><a href="<?php echo site_url("Sesiones/agregarSesion")?>">Agregar sesiones</a></li>
+						<li <?php echo $editarSesion; ?> ><a href="<?php echo site_url("Sesiones/editarSesion")?>">Editar sesiones</a></li>
+						<li <?php echo $eliminarSesion; ?> ><a href="<?php echo site_url("Sesiones/eliminarSesion")?>">Eliminar sesiones</a></li>
+					<?php } ?>
+				</div>
+			</div>
+		</div>
+		<div class="accordion-group">
+			<div class="accordion-heading">
+				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFive">
+				Actividades masivas</a>
+			</div>
+			<div id="collapseFive" class="accordion-body collapse <?php echo $inActividades; ?>">
+				<div class="accordion-inner nav nav-list">
+					<li <?php echo $verActividades; ?> ><a href="<?php echo site_url("ActividadesMasivas/verActividades")?>">Ver actividades</a></li>
+					<?php if ($id_tipo_usuario == TIPO_USR_COORDINADOR) { ?>
+						<li <?php echo $agregarActividad; ?> ><a href="<?php echo site_url("ActividadesMasivas/agregarActividad")?>">Agregar actividades</a></li>
+						<li <?php echo $editarActividad; ?> ><a href="<?php echo site_url("ActividadesMasivas/editarActividad")?>">Editar actividades</a></li>
+						<li <?php echo $eliminarActividad; ?> ><a href="<?php echo site_url("ActividadesMasivas/eliminarActividad")?>">Eliminar actividades</a></li>
 					<?php } ?>
 				</div>
 			</div>

@@ -6,7 +6,7 @@
 			<a class="btn btn-mini" href="<?php echo site_url("Correo/enviarCorreo") ?>" title="Enviar correo">
 				<i class="icon-envelope"></i>
 			</a>
-			<a class="btn btn-mini" href="<?php echo site_url("Login/cambiarContrasegna") ?>" title="Perfil de usuario y cambio de contraseña">
+			<a class="btn btn-mini" href="<?php echo site_url("User/datosUsuario") ?>" title="Perfil de usuario y cambio de contraseña">
 				<i class="icon-user"> </i>
 			</a>
 			<a class="btn btn-mini" href="<?php echo site_url("Login/logout") ?>" title="Desconectarse de ManteKA">
@@ -23,7 +23,7 @@
 					<a href="/<?php echo config_item('dir_alias') ?>/index.php/About/acercaNosotros"> Acerca de Nosotros</a>
 				</li>
 				<li>
-					<a href="/<?php echo config_item('dir_alias') ?>/index.php/Otros/manualUsuario">Manual de Usuario</a>
+					<a href="/<?php echo config_item('dir_alias') ?>/manual_usuario.pdf" target="blank">Manual de Usuario</a>
 				</li>
 			</ul>
 		</div>

@@ -245,9 +245,9 @@ $config['encryption_key'] = 'E42B054623B3799CB71F0883900F2764'; //elegida al aza
 |
 */
 $config['sess_cookie_name']		= 'ci_session';
-$config['sess_expiration']		= 7200;
-$config['sess_expire_on_close']	= FALSE;
-$config['sess_encrypt_cookie']	= FALSE;
+$config['sess_expiration']		= 14400;
+$config['sess_expire_on_close']	= TRUE;
+$config['sess_encrypt_cookie']	= TRUE;
 $config['sess_use_database']	= FALSE;
 $config['sess_table_name']		= 'ci_sessions';
 $config['sess_match_ip']		= FALSE;
@@ -361,4 +361,8 @@ $config['proxy_ips'] = '';
 /* End of file config.php */
 /* Location: ./application/config/config.php */
 
-$config['dir_alias'] = "manteka";
+$config['dir_alias'] = "manteka"; //Cambiar esto si se instala en otra URL, dejarla en blanco en caso de que se instale en la raiz de un servidor
+
+$config['mail_manteka'] = "manteka.usach@gmail.com";
+$config['password_mail_manteka'] = "451752645";
+$config['php_path'] = "C:\\wamp\\bin\\php\\php5.4.3\\php"; //Cambiar esto según donde se encuentre el ejecutable de php

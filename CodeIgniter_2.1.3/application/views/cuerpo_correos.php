@@ -1,4 +1,4 @@
-<!-- <link rel="stylesheet" href="/<?php echo config_item('dir_alias') ?>/css/correosEnviados.css" type="text/css" media="all" /> -->
+ <link rel="stylesheet" href="/<?php echo config_item('dir_alias') ?>/css/correosEnviados.css" type="text/css" media="all" /> 
 
 <script type="text/javascript">
 /** 
@@ -19,11 +19,11 @@ function DetalleCorreo(hora,fecha,asunto,id,de,codigo)
 	document.getElementById("asuntoDetalle").innerHTML=asunto;
 	document.getElementById("de").innerHTML=de;
 	document.getElementById("cuerpoMail").innerHTML=document.getElementById("c"+id).value;
-
-
+	obtenerAdjunto(codigo);
+	
 	$.ajax({
 		type: "POST",
-		url: "<?php echo site_url("Correo/postLeido") ?>",
+		url: "<?php echo site_url("Correo/marcarComoLeidoAjax") ?>",
 			
 		data: {codigo:codigo},
 		success: function(respuesta)
@@ -87,7 +87,7 @@ function cambiarCorreos(direccion,offsetL)
 
 	$.ajax({
 		type: "POST",
-		url: "<?php echo site_url("Correo/postRecibidos") ?>",
+		url: "<?php echo site_url("Correo/getCorreosRecibidosAjax") ?>",
 		data: { offset: offset, textoBusqueda: textoBusqueda, textoFiltrosAvanzados: valorFiltrosJson},
 		success: function(respuesta){
 			var tablaResultados = document.getElementById('listadoResultados');
@@ -150,7 +150,10 @@ function cambiarCorreos(direccion,offsetL)
 				td.setAttribute("style","text-align:left;padding-left:7px;");
 				td.setAttribute("onclick","DetalleCorreo('"+listaRecibidos[i].hora+"','"+listaRecibidos[i].fecha+"','"+listaRecibidos[i].asunto+"',"+i+",'"+de+"',"+listaRecibidos[i].codigo+")");
 				
-
+				var span="";
+				
+				if (listaRecibidos[i].adjuntos!="")
+					span="<span  style='width: 15px; height: 15px; float:right; margin-right:8px;'><img src='/manteka/img/icons/glyphicons_062_paperclip' alt=':' ></span>";	
 				if(noLeido==1){
 					
 					var largoAsunto=listaRecibidos[i].asunto.length; 
@@ -164,7 +167,7 @@ function cambiarCorreos(direccion,offsetL)
 						var cuerpoTmp = strip(cuerpo+"<a>").substr(0,40-largoAsunto)+".....";	
 					else
 						var cuerpoTmp = strip(cuerpo+"<a>");	
-					td.innerHTML = asuntoTmp+" - <font color='#999999'>"+cuerpoTmp+"</font>";
+					td.innerHTML = asuntoTmp+" - <font color='#999999'>"+cuerpoTmp+"</font>"+span;
 				}else{
 					var largoAsunto=listaRecibidos[i].asunto.length; 
 					if(listaRecibidos[i].asunto.length>30){
@@ -177,7 +180,7 @@ function cambiarCorreos(direccion,offsetL)
 						var cuerpoTmp = strip(cuerpo+"<a>").substr(0,40-largoAsunto)+".....";	
 					else
 						var cuerpoTmp = strip(cuerpo+"<a>");	
-					td.innerHTML = asuntoTmp+" - <font color='#999999'>"+cuerpoTmp+"</font>";
+					td.innerHTML = asuntoTmp+" - <font color='#999999'>"+cuerpoTmp+"</font>"+span;
 						
 				}
 				//
@@ -273,13 +276,112 @@ function cambiarCorreos(direccion,offsetL)
 			$(icono_cargando).show();
 	
 }
+/** 
+* Esta función obtiene los archivos adjuntos de un correo.
+*/
+function obtenerAdjunto(codigo)
+{
+	$.ajax({
+		type: "POST",
+		url: "<?php echo site_url("Correo/getAdjuntosAjax") ?>",
+		data: { codigo: codigo},
+		success: function(respuesta){
+			listaAdjuntos = JSON.parse(respuesta);
+			if(listaAdjuntos.length>0)
+			{
+				$('#destinosAdjuntos').css({display:'none'});
+				var tablaResultados=document.getElementById("files");
+				$(tablaResultados).find('tbody').remove();
+
+				tbody = document.createElement('tbody');
+				tbody.setAttribute("style","height:auto;width:100%;");
+				for(num=0;num<listaAdjuntos.length;num++){
+
+					document.getElementById("attach").setAttribute("style","display:'';");
+					var tr= document.createElement('tr'); 
+					tr.setAttribute("id","f"+num);
+					tr.setAttribute("style","margin-left:0px;display:block;");
+					var td=document.createElement("td");
+					td.setAttribute("style","width:95%;display:inline-table;font-size:10px;");
+					var span;
+					var iconClass='icon icon-'+listaAdjuntos[num].logico.substring(listaAdjuntos[num].logico.lastIndexOf(".")+1);
+					span="<span  class='"+iconClass+"''></span>";	
+					var link="<a href='"+listaAdjuntos[num].fisico+"' download='"+listaAdjuntos[num].logico+"'>"+listaAdjuntos[num].logico+"</a>";
+					td.innerHTML=span+" "+link;
+					tr.appendChild(td);
+					tbody.appendChild(tr);
+					tr=document.createElement("tr");
+					tr.setAttribute("id",'b'+num);
+					tr.setAttribute("style","display:none");
+					tbody.appendChild(tr);
+
+				}
+				tablaResultados.appendChild(tbody);
+			}
+			else
+			{
+
+				$('#destinosAdjuntos').css({display:'inline-block'});
+			}
+		}
+	});
+	/* Muestro el div que indica que se está cargando... */
+	var iconoCargado = document.getElementById("icono_cargando");
+	$(icono_cargando).show();
+}
+/** 
+* Esta función obtiene los archivos adjuntos de un correo.
+*/
+function obtenerAdjuntoOld(codigo)
+{
+	$.ajax({
+		type: "POST",
+		url: "<?php echo site_url("Correo/getAdjuntosAjax") ?>",
+		data: { codigo: codigo},
+		success: function(respuesta){
+			listaAdjuntos = JSON.parse(respuesta);
+			if(listaAdjuntos.length>0)
+			{
+				$('#destinosAdjuntos').css({display:'none'});
+				$('#xxx').css({float:'left'});
+				$('#xxx').css({display:'block'});
+				var fisicos = "";
+				var logicos = "";
+				for (var i = 0; i < listaAdjuntos.length; i++)
+				{
+					if(i==0)
+					{
+						fisicos = fisicos + listaAdjuntos[i].fisico;
+						logicos = logicos + listaAdjuntos[i].logico;
+					}
+					else
+					{
+						fisicos = fisicos + "???" + listaAdjuntos[i].fisico;
+						logicos = logicos + "???" + listaAdjuntos[i].logico;
+					}
+				}
+				document.getElementById("adjuntosEmailFisico").value = fisicos;
+				document.getElementById("adjuntosEmailLogico").value = logicos;
+			}
+			else
+			{
+				$('#xxx').css({display:'none'});
+				$('#destinosAdjuntos').css({float:'left'});
+				$('#destinosAdjuntos').css({display:'block'});
+			}
+		}
+	});
+	/* Muestro el div que indica que se está cargando... */
+	var iconoCargado = document.getElementById("icono_cargando");
+	$(icono_cargando).show();
+}
 
 /** 
 * Esta función elimina los tags HTML
 */
 function strip(html)
 {
-   var tmp = document.createElement("DIV");
+   var tmp = document.createElement("div");
    tmp.innerHTML = html;
    return tmp.textContent||tmp.innerText;
 }
@@ -464,7 +566,7 @@ function cargarCorreo(codigo)
 	
 	$.ajax({
 		type: "POST",
-		url: "<?php echo site_url("Correo/postCargarCorreo") ?>",	
+		url: "<?php echo site_url("Correo/getDetallesCorreoAjax") ?>",	
 		data: {codigo:codigo},
 		success: function(respuesta)
 		{
@@ -483,7 +585,7 @@ function cargarCorreo(codigo)
 				tablaResultados.appendChild(textarea);
 				document.getElementById("cc").value=cuerpo;
 				var de=detalles[1].nombre+" "+detalles[1].apellido1+" "+detalles[1].apellido2;
-				DetalleCorreo(detalles[0].hora,detalles[0].fecha,detalles[0].asunto,'c',de);
+				DetalleCorreo(detalles[0].hora,detalles[0].fecha,detalles[0].asunto,'c',de,codigo);
 			}
 			var iconoCargado = document.getElementById("icono_cargando");
 			$(icono_cargando).hide();
@@ -543,7 +645,7 @@ if(isset($msj))
 ?>
 
 <script>
-	var tiposFiltro = ["", "De", "Mensaje", "Fecha", "Hora"]; //Debe ser escrito con PHP
+	var tiposFiltro = ["", "De", "Mensaje", "Fecha y hora"]; //Debe ser escrito con PHP
 	var valorFiltrosJson = ["", "", "", "", ""]; //Esta es variable global que almacena el valor de los input de búsqueda en específico
 	var inputAllowedFiltro = ["[A-Za-z]+", "[A-Za-z]+", "[A-Za-z]+","([1-9][0-9]{3}-(0\\d|1[0-2])-([0-2]\\d|3[0-1])|[1-9][0-9]{3}-(0\\d|1[0-2])|[1-9][0-9]{3}|(0\\d|1[0-2])|([0-2]\\d|3[0-1]))","(^(0{0,1}\\d|1\\d|2[0-3]):([0-5]\\d):([0-5]\\d)$|([0-5]\\d):([0-5]\\d)$|([0-5]\\d)$)"];
 	var prefijo_tipoDato = "correo_rec_";
@@ -603,6 +705,8 @@ if(isset($msj))
 			
 		</div>
 		<div class="span6" >
+			<input type="hidden" id="adjuntosEmailFisico" name="adjuntosEmailFisico" value="">
+			<input type="hidden" id="adjuntosEmailLogico" name="adjuntosEmailLogico" value="">
 			<ul id="pager" class="pager" style="text-align:right; margin:0px" >
 				<span id="mostrando">  mostrando <?php echo ($offset+1)."-".$limite. " de: ".$cantidadCorreos; ?></span>
 				<li id="ant" class="disabled" ><a href="#"><div class="btn_with_icon_solo"><</div></a></li>
@@ -689,7 +793,11 @@ if(isset($msj))
 	</br>
 	<pre class="detallesEmail">
 <div class="pull-right">Fecha: <b  id="fecha"> </b>  <b class="pull-right" id="hora"></b></div>
-  De:     <b id="de"></b>
-  Asunto: <b id="asuntoDetalle"></b>
-	<fieldset id="cuerpoMail" style=" min-height:250px;"></fieldset></pre>
+  De:       <b id="de"></b>
+  Asunto:   <b id="asuntoDetalle"></b>
+  Adjuntos: <b  class="txt"  style="display:none;" id="destinosAdjuntos">Sin archivos adjuntos</b> <!--<div id="xxx" href="#" rel="details2"  class="btn btn_with_icon_solo" style="width: 15px; height: 15px; align:left;"><img src="/<?php echo config_item('dir_alias') ?>/img/icons/glyphicons_062_paperclip.png" alt=":" ></div>-->
+<fieldset id="attach" style="display:none"><table id="files" class="files" style="height:auto;width:100%;"><tbody  style="height:auto;width:100%;"></tbody></table></fieldset>
+  Cuerpo:<fieldset id="cuerpoMail" style=" min-height:250px;"></fieldset></pre>
 </fieldset>
+<script type="text/javascript">
+</script>
